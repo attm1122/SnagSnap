@@ -90,6 +90,7 @@ final class PhotoAnnotationViewModel {
 
             // Update the photo model
             photo.annotatedImagePath = annotatedPath
+            photo.includeInReport = true  // Annotated photos should always be included
             photo.updatedAt = Date()
 
             if let context = modelContext {

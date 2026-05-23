@@ -742,7 +742,11 @@ class PDFReportService {
 
         // Photos section
         if settings.includePhotos {
-            let photos = issue.photos ?? []
+            let allPhotos = issue.photos ?? []
+            let photos = allPhotos.filter { $0.includeInReport }
+            let includedPhotoCount = photos.count
+            let excludedCount = allPhotos.count - includedPhotoCount
+
             if !photos.isEmpty {
                 currentY += 15
                 drawHorizontalLine(context: cgContext, y: currentY, bounds: bounds)
@@ -752,7 +756,10 @@ class PDFReportService {
                     .font: UIFont.systemFont(ofSize: 12, weight: .medium),
                     .foregroundColor: UIColor.gray
                 ]
-                let photoCountText = photos.count == 1 ? "1 Photo" : "\(photos.count) Photos"
+                var photoCountText = includedPhotoCount == 1 ? "1 Photo" : "\(includedPhotoCount) Photos"
+                if excludedCount > 0 {
+                    photoCountText += " (\(excludedCount) excluded)"
+                }
                 (photoCountText as NSString).draw(
                     at: CGPoint(x: margin, y: currentY),
                     withAttributes: photosLabelAttributes

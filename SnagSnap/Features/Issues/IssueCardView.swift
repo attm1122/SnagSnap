@@ -186,7 +186,10 @@ struct IssueCardView: View {
                         .stroke(Color.gray.opacity(0.2), lineWidth: 0.5)
                 )
                 .overlay(
-                    photo.hasAnnotation ? annotationIndicator : nil
+                    photo.hasAnnotation ? thumbnailAnnotationBadge : nil
+                )
+                .overlay(
+                    !photo.includeInReport ? thumbnailExcludedBadge : nil
                 )
         } else {
             RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous)
@@ -200,9 +203,9 @@ struct IssueCardView: View {
         }
     }
 
-    // MARK: - Annotation Indicator
+    // MARK: - Thumbnail Annotation Badge
 
-    private var annotationIndicator: some View {
+    private var thumbnailAnnotationBadge: some View {
         VStack {
             HStack {
                 Spacer()
@@ -213,6 +216,22 @@ struct IssueCardView: View {
                     .padding(2)
             }
             Spacer()
+        }
+    }
+
+    // MARK: - Thumbnail Excluded Badge
+
+    private var thumbnailExcludedBadge: some View {
+        VStack {
+            Spacer()
+            HStack {
+                Spacer()
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.red.opacity(0.9))
+                    .background(Circle().fill(.white))
+                    .padding(2)
+            }
         }
     }
 
