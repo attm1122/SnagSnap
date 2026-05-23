@@ -76,6 +76,14 @@ struct ReportCardView: View {
                             .foregroundStyle(Theme.secondaryLabel)
                     }
 
+                    // PDF exported indicator
+                    if report.hasExportedPDF {
+                        Image(systemName: "doc.fill")
+                            .font(.system(size: 10))
+                            .foregroundStyle(Theme.success)
+                            .accessibilityLabel("PDF exported")
+                    }
+
                     // Status dot
                     StatusDot(color: report.status.color, size: 8)
                 }

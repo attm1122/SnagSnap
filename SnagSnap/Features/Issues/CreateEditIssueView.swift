@@ -284,6 +284,13 @@ struct CreateEditIssueView: View {
 
     @State private var selectedPhotoItems: [PhotosPickerItem] = []
 
+    // MARK: - Local State for Photo Viewer
+
+    @State private var selectedPhotoForViewer: IssuePhoto?
+    @State private var showImageViewer: Bool = false
+    @State private var viewerShowAnnotated: Bool = false
+    @State private var photoInclusionStates: [UUID: Bool] = [:]
+
     // MARK: - Injected Dependencies
 
     private let injectedModelContext: ModelContext?
@@ -356,6 +363,9 @@ struct CreateEditIssueView: View {
                 set: { viewModel?.showPhotoAnnotation = $0 }
             )) {
                 annotationSheet
+            }
+            .sheet(isPresented: $showImageViewer) {
+                imageViewerSheet
             }
             .alert("Delete Photo?", isPresented: Binding(
                 get: { viewModel?.showDeletePhotoConfirmation ?? false },
@@ -564,11 +574,37 @@ struct CreateEditIssueView: View {
             ForEach(photos, id: \.id) { photo in
                 PhotoGridCell(
                     photo: photo,
-                    onTap: { viewModel?.annotatePhoto(photo) },
-                    onLongPress: { viewModel?.requestDeletePhoto(photo) }
+                    onToggleInclusion: { togglePhotoInclusion(photo) },
+                    onTap: { openImageViewer(photo: photo) },
+                    onAnnotate: { viewModel?.annotatePhoto(photo) },
+                    onDelete: { viewModel?.requestDeletePhoto(photo) }
                 )
             }
         }
+    }
+
+    // MARK: - Photo Inclusion Toggle
+
+    private func togglePhotoInclusion(_ photo: IssuePhoto) {
+        photo.includeInReport.toggle()
+        photo.updatedAt = Date()
+        photoInclusionStates[photo.id] = photo.includeInReport
+        HapticService.shared.play(.light)
+
+        // Save context
+        do {
+            try modelContext.save()
+        } catch {
+            print("Failed to save inclusion toggle: \(error)")
+        }
+    }
+
+    // MARK: - Image Viewer
+
+    private func openImageViewer(photo: IssuePhoto, showAnnotated: Bool = false) {
+        selectedPhotoForViewer = photo
+        viewerShowAnnotated = showAnnotated
+        showImageViewer = true
     }
 
     // MARK: - Camera Sheet
@@ -611,6 +647,15 @@ struct CreateEditIssueView: View {
             PhotoAnnotationView(photo: photo)
         }
     }
+
+    // MARK: - Image Viewer Sheet
+
+    @ViewBuilder
+    private var imageViewerSheet: some View {
+        if let photo = selectedPhotoForViewer {
+            ImageViewerView(photo: photo, initialShowAnnotated: viewerShowAnnotated)
+        }
+    }
 }
 
 // MARK: - Severity Option Button
@@ -648,25 +693,15 @@ private struct SeverityOptionButton: View {
 
 private struct PhotoGridCell: View {
     let photo: IssuePhoto
+    let onToggleInclusion: () -> Void
     let onTap: () -> Void
-    let onLongPress: () -> Void
+    let onAnnotate: () -> Void
+    let onDelete: () -> Void
+
+    @Environment(\.modelContext) private var modelContext
 
     var body: some View {
-        Button(action: onTap) {
-            Group {
-                if let uiImage = FileStorageService.shared.loadThumbnail(from: photo.thumbnailImagePath) {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .scaledToFill()
-                } else {
-                    RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous)
-                        .fill(Color.gray.opacity(0.2))
-                        .overlay(
-                            Image(systemName: "photo")
-                                .foregroundStyle(.secondary)
-                        )
-                }
-            }
+        thumbnailImage
             .frame(height: 90)
             .clipShape(RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous))
             .overlay(
@@ -678,15 +713,81 @@ private struct PhotoGridCell: View {
                 alignment: .topTrailing
             )
             .overlay(
-                deleteOverlay,
-                alignment: .bottomTrailing
+                inclusionIndicator,
+                alignment: .bottomLeading
             )
-        }
-        .buttonStyle(.plain)
-        .onLongPressGesture {
-            onLongPress()
+            .overlay(
+                !photo.includeInReport ? excludedOverlay : nil
+            )
+            .onTapGesture {
+                onTap()
+            }
+            .contextMenu {
+                Button {
+                    onTap()
+                } label: {
+                    Label("View", systemImage: "eye")
+                }
+
+                if photo.hasAnnotation {
+                    Button {
+                        onTap()
+                    } label: {
+                        Label("View Annotated", systemImage: "pencil.circle")
+                    }
+                }
+
+                Button {
+                    sharePhoto()
+                } label: {
+                    Label("Share Image", systemImage: "square.and.arrow.up")
+                }
+
+                Button {
+                    onAnnotate()
+                } label: {
+                    Label("Annotate", systemImage: "pencil")
+                }
+
+                Button {
+                    onToggleInclusion()
+                } label: {
+                    if photo.includeInReport {
+                        Label("Exclude from Report", systemImage: "checkmark.circle.fill")
+                    } else {
+                        Label("Include in Report", systemImage: "xmark.circle")
+                    }
+                }
+
+                Divider()
+
+                Button(role: .destructive) {
+                    onDelete()
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                }
+            }
+    }
+
+    // MARK: - Thumbnail
+
+    @ViewBuilder
+    private var thumbnailImage: some View {
+        if let uiImage = FileStorageService.shared.loadThumbnail(from: photo.thumbnailImagePath) {
+            Image(uiImage: uiImage)
+                .resizable()
+                .scaledToFill()
+        } else {
+            RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous)
+                .fill(Color.gray.opacity(0.2))
+                .overlay(
+                    Image(systemName: "photo")
+                        .foregroundStyle(.secondary)
+                )
         }
     }
+
+    // MARK: - Annotation Badge
 
     private var annotationBadge: some View {
         Image(systemName: "pencil.circle.fill")
@@ -696,15 +797,38 @@ private struct PhotoGridCell: View {
             .padding(4)
     }
 
-    private var deleteOverlay: some View {
-        Button(action: onLongPress) {
-            Image(systemName: "xmark.circle.fill")
+    // MARK: - Inclusion Indicator
+
+    private var inclusionIndicator: some View {
+        Button(action: onToggleInclusion) {
+            Image(systemName: photo.includeInReport ? "checkmark.circle.fill" : "xmark.circle.fill")
                 .font(.system(size: 18))
-                .foregroundStyle(Color.red.opacity(0.9))
+                .foregroundStyle(photo.includeInReport ? Color.green : Color.red.opacity(0.8))
                 .background(Circle().fill(.white))
         }
         .buttonStyle(.plain)
         .padding(4)
+    }
+
+    // MARK: - Excluded Overlay
+
+    private var excludedOverlay: some View {
+        RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous)
+            .fill(Color.black.opacity(0.25))
+    }
+
+    // MARK: - Share
+
+    private func sharePhoto() {
+        let image: UIImage?
+        if let annotatedPath = photo.annotatedImagePath {
+            image = FileStorageService.shared.loadAnnotatedImage(from: annotatedPath)
+                ?? FileStorageService.shared.loadImage(from: photo.originalImagePath)
+        } else {
+            image = FileStorageService.shared.loadImage(from: photo.originalImagePath)
+        }
+        guard let imageToShare = image else { return }
+        ShareService.shared.shareImage(imageToShare, caption: photo.caption)
     }
 }
 

@@ -108,6 +108,9 @@ final class ReportWorkspaceViewModel {
     /// Generated PDF data ready for sharing.
     var pdfDataToShare: Data?
 
+    /// The file URL of the most recently saved PDF for this report.
+    var latestPDFURL: URL?
+
     // MARK: - Dependencies
 
     private let pdfService = PDFReportService.shared
@@ -171,11 +174,24 @@ final class ReportWorkspaceViewModel {
     // MARK: - PDF Actions
 
     /// Generates a PDF for the given report using current export settings.
-    func generatePDF(for report: InspectionReport) {
+    /// Saves the PDF to disk and updates the report model with the PDF reference.
+    func generatePDF(for report: InspectionReport, modelContext: ModelContext) {
         pdfState = .generating
 
         do {
             let data = try pdfService.generatePDF(for: report, settings: exportSettings)
+
+            // Save PDF to disk and update report
+            let filename = FileStorageService.shared.pdfFilename(for: report.id)
+            let pdfURL = try FileStorageService.shared.savePDF(data, filename: filename)
+            self.latestPDFURL = pdfURL
+
+            // Update the report model with PDF reference
+            report.latestPDFPath = filename
+            report.lastExportedAt = Date()
+            report.status = .exported
+            try modelContext.save()
+
             pdfState = .generated(data)
             pdfDataToShare = data
         } catch {
@@ -195,6 +211,48 @@ final class ReportWorkspaceViewModel {
             pdfDataToShare = data
             showShareSheet = true
         }
+    }
+
+    /// Checks if a previously generated PDF exists for the given report.
+    func hasExistingPDF(for report: InspectionReport) -> Bool {
+        guard let path = report.latestPDFPath else { return false }
+        return FileStorageService.shared.pdfExists(named: path)
+    }
+
+    /// Loads the existing PDF data for a report, if available.
+    func loadExistingPDF(for report: InspectionReport) -> Data? {
+        guard let path = report.latestPDFPath else { return nil }
+        return FileStorageService.shared.loadPDF(named: path)
+    }
+
+    /// Deletes the existing PDF for a report.
+    func deleteExistingPDF(for report: InspectionReport, modelContext: ModelContext) {
+        guard let path = report.latestPDFPath else { return }
+        try? FileStorageService.shared.deletePDF(named: path)
+        report.latestPDFPath = nil
+        report.lastExportedAt = nil
+        try? modelContext.save()
+    }
+
+    /// Shares the latest generated PDF for the report.
+    func shareLatestPDF(for report: InspectionReport) {
+        guard let path = report.latestPDFPath,
+              let pdfData = FileStorageService.shared.loadPDF(named: path) else {
+            return
+        }
+        ShareService.shared.sharePDF(pdfData, reportTitle: report.title)
+    }
+
+    /// Checks for an existing PDF on initialization and restores the state if found.
+    func checkForExistingPDF(for report: InspectionReport) {
+        guard let path = report.latestPDFPath,
+              FileStorageService.shared.pdfExists(named: path),
+              let data = FileStorageService.shared.loadPDF(named: path) else {
+            return
+        }
+        pdfState = .generated(data)
+        pdfDataToShare = data
+        latestPDFURL = FileStorageService.shared.pdfURL(for: path)
     }
 
     // MARK: - Severity Breakdown

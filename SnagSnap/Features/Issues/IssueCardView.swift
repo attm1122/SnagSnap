@@ -90,11 +90,58 @@ struct IssueCardView: View {
         HStack(spacing: Theme.spacingS) {
             SeverityIndicator(severity: issue.severity)
             IssueStatusBadge(status: issue.status)
+
+            if issue.hasPhotos {
+                photoCountIndicator
+            }
+
+            if hasAnyAnnotatedPhotos {
+                annotationIndicator
+            }
+
             Spacer()
             Text(formattedDate(issue.createdAt))
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
         }
+    }
+
+    // MARK: - Photo Count Indicator
+
+    private var photoCountIndicator: some View {
+        let includedCount = (issue.photos ?? []).filter(\.includeInReport).count
+        let totalCount = issue.photoCount
+        let iconName = totalCount == 1 ? "photo" : "photo.stack"
+        let text = totalCount == 1 ? "1 photo" : "\(totalCount) photos"
+
+        return HStack(spacing: 2) {
+            Image(systemName: iconName)
+                .font(.caption2)
+            if includedCount < totalCount {
+                Text("\(includedCount)/\(totalCount)")
+                    .font(.caption2.weight(.medium))
+            } else {
+                Text("\(totalCount)")
+                    .font(.caption2.weight(.medium))
+            }
+        }
+        .foregroundStyle(.secondary)
+    }
+
+    // MARK: - Annotation Indicator
+
+    private var annotationIndicator: some View {
+        HStack(spacing: 2) {
+            Image(systemName: "pencil.circle")
+                .font(.caption2)
+        }
+        .foregroundStyle(Theme.primary)
+    }
+
+    // MARK: - Computed Properties
+
+    private var hasAnyAnnotatedPhotos: Bool {
+        issue.photos?.contains(where: \.hasAnnotation) ?? false
     }
 
     // MARK: - Notes Preview

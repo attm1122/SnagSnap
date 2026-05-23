@@ -1,104 +1,157 @@
 // SnagSnap
 // ShareService.swift
 //
-// Service for sharing PDFs and images via the native iOS share sheet.
+// Unified sharing service for images, PDFs, and report data.
 
 import UIKit
 
-/// Centralized service for sharing content via the native iOS share sheet.
+/// Service for sharing images and documents via the system share sheet.
 @Observable
-class ShareService {
-    
+final class ShareService {
+
+    // MARK: - Shared Instance
+
     static let shared = ShareService()
-    
+
+    // MARK: - Private Init
+
     private init() {}
-    
-    /// Presents a share sheet for the given items.
+
+    // MARK: - Public Methods
+
+    /// Shares an array of images using the system UIActivityViewController.
     ///
     /// - Parameters:
-    ///   - items: The items to share (PDF Data, UIImage, URLs, etc.).
-    ///   - subject: Optional email subject for share extensions that support it.
-    ///   - sourceView: The source view/rect for iPad popover presentation.
-    ///   - completion: Called when the share sheet is dismissed.
-    func presentShareSheet(
-        for items: [Any],
-        subject: String? = nil,
-        sourceView: UIView? = nil,
-        completion: (() -> Void)? = nil
-    ) {
-        let activityVC = UIActivityViewController(activityItems: items, applicationActivities: nil)
-        
-        if let subject = subject {
-            activityVC.setValue(subject, forKeyPath: "subject")
+    ///   - images: The images to share.
+    ///   - caption: Optional caption text to include with the share.
+    ///   - completion: Closure called when the share sheet is dismissed.
+    func shareImages(_ images: [UIImage], caption: String? = nil, completion: (() -> Void)? = nil) {
+        var items: [Any] = images
+        if let caption = caption, !caption.isEmpty {
+            items.insert(caption, at: 0)
         }
-        
-        // Exclude options not relevant
-        activityVC.excludedActivityTypes = [
+
+        let activityController = UIActivityViewController(activityItems: items, applicationActivities: nil)
+
+        if let completion = completion {
+            activityController.completionWithItemsHandler { _, _, _, _ in
+                completion()
+            }
+        }
+
+        // Present from the topmost view controller
+        DispatchQueue.main.async {
+            guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                  let rootViewController = windowScene.windows.first?.rootViewController else {
+                return
+            }
+
+            var topController = rootViewController
+            while let presented = topController.presentedViewController {
+                topController = presented
+            }
+
+            // For iPad support
+            if let popover = activityController.popoverPresentationController {
+                popover.sourceView = topController.view
+                popover.sourceRect = CGRect(x: topController.view.bounds.midX, y: topController.view.bounds.midY, width: 0, height: 0)
+                popover.permittedArrowDirections = []
+            }
+
+            topController.present(activityController, animated: true)
+        }
+    }
+
+    /// Shares a single image using the system UIActivityViewController.
+    ///
+    /// - Parameters:
+    ///   - image: The image to share.
+    ///   - caption: Optional caption text to include with the share.
+    ///   - completion: Closure called when the share sheet is dismissed.
+    func shareImage(_ image: UIImage, caption: String? = nil, completion: (() -> Void)? = nil) {
+        shareImages([image], caption: caption, completion: completion)
+    }
+
+    /// Shares a PDF file using the system UIActivityViewController.
+    ///
+    /// - Parameters:
+    ///   - url: The file URL of the PDF to share.
+    ///   - completion: Closure called when the share sheet is dismissed.
+    func sharePDF(_ url: URL, completion: (() -> Void)? = nil) {
+        let activityController = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+
+        if let completion = completion {
+            activityController.completionWithItemsHandler { _, _, _, _ in
+                completion()
+            }
+        }
+
+        DispatchQueue.main.async {
+            guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                  let rootViewController = windowScene.windows.first?.rootViewController else {
+                return
+            }
+
+            var topController = rootViewController
+            while let presented = topController.presentedViewController {
+                topController = presented
+            }
+
+            if let popover = activityController.popoverPresentationController {
+                popover.sourceView = topController.view
+                popover.sourceRect = CGRect(x: topController.view.bounds.midX, y: topController.view.bounds.midY, width: 0, height: 0)
+                popover.permittedArrowDirections = []
+            }
+
+            topController.present(activityController, animated: true)
+        }
+    }
+
+    /// Shares raw PDF data using the system UIActivityViewController.
+    ///
+    /// - Parameters:
+    ///   - pdfData: The raw PDF data to share.
+    ///   - reportTitle: The title of the report, used as the subject.
+    ///   - completion: Closure called when the share sheet is dismissed.
+    func sharePDF(_ pdfData: Data, reportTitle: String, completion: (() -> Void)? = nil) {
+        var items: [Any] = [pdfData]
+        if !reportTitle.isEmpty {
+            items.insert(reportTitle, at: 0)
+        }
+
+        let activityController = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        activityController.setValue(reportTitle, forKey: "subject")
+
+        activityController.excludedActivityTypes = [
             .assignToContact,
             .postToFacebook,
             .postToTwitter
         ]
-        
-        // iPad popover support
-        if let sourceView = sourceView, let popover = activityVC.popoverPresentationController {
-            popover.sourceView = sourceView
-            popover.sourceRect = CGRect(x: sourceView.bounds.midX, y: sourceView.bounds.midY, width: 0, height: 0)
-            popover.permittedArrowDirections = []
-        }
-        
-        activityVC.completionWithItemsHandler = { _, _, _, _ in
-            completion?()
-        }
-        
-        // Present from the top-most view controller
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let rootVC = windowScene.windows.first?.rootViewController {
-            var topVC = rootVC
-            while let presented = topVC.presentedViewController {
-                topVC = presented
+
+        if let completion = completion {
+            activityController.completionWithItemsHandler { _, _, _, _ in
+                completion()
             }
-            topVC.present(activityVC, animated: true)
         }
-    }
-    
-    /// Shares a PDF report with a pre-filled subject.
-    ///
-    /// - Parameters:
-    ///   - pdfData: The raw PDF data.
-    ///   - reportTitle: The report title used for the share subject.
-    ///   - completion: Called when sharing completes.
-    func sharePDF(_ pdfData: Data, reportTitle: String, completion: (() -> Void)? = nil) {
-        let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("SnagSnap_\(reportTitle.sanitizedForFilename).pdf")
-        try? pdfData.write(to: tempURL, options: .atomic)
-        
-        presentShareSheet(
-            for: [tempURL],
-            subject: "Property Inspection Report: \(reportTitle)",
-            completion: completion
-        )
-    }
-    
-    /// Shares one or more images.
-    ///
-    /// - Parameters:
-    ///   - images: The UIImages to share.
-    ///   - caption: Optional caption/description.
-    ///   - completion: Called when sharing completes.
-    func shareImages(_ images: [UIImage], caption: String? = nil, completion: (() -> Void)? = nil) {
-        var items: [Any] = images
-        if let caption = caption { items.append(caption) }
-        presentShareSheet(for: items, completion: completion)
-    }
-}
 
-// MARK: - String Helpers
+        DispatchQueue.main.async {
+            guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                  let rootViewController = windowScene.windows.first?.rootViewController else {
+                return
+            }
 
-private extension String {
-    /// Removes characters unsafe for filesystem names.
-    var sanitizedForFilename: String {
-        let unsafeChars = CharacterSet(charactersIn: "/\\?%*|\"<>:")
-        return components(separatedBy: unsafeChars).joined(separator: "_")
-            .trimmingCharacters(in: .whitespaces)
+            var topController = rootViewController
+            while let presented = topController.presentedViewController {
+                topController = presented
+            }
+
+            if let popover = activityController.popoverPresentationController {
+                popover.sourceView = topController.view
+                popover.sourceRect = CGRect(x: topController.view.bounds.midX, y: topController.view.bounds.midY, width: 0, height: 0)
+                popover.permittedArrowDirections = []
+            }
+
+            topController.present(activityController, animated: true)
+        }
     }
 }

@@ -1,37 +1,85 @@
 // SnagSnap
 // ImageViewerView.swift
 //
-// Full-screen image viewer with original/annotated tabs and sharing.
+// Full-screen image viewer with original/annotated toggle and sharing.
 
 import SwiftUI
 
-/// Displays an issue photo in full screen with support for viewing
-/// both the original and annotated versions, plus sharing.
+// MARK: - ImageViewerView
+
+/// Full-screen image viewer that displays an issue photo with support for
+/// toggling between original and annotated versions, zoom/pan, and sharing.
 struct ImageViewerView: View {
-    
-    @Environment(\.dismiss) private var dismiss
-    @State private var showAnnotated = false
-    @State private var showShareSheet = false
-    @State private var currentImage: UIImage?
-    
+
+    // MARK: - Properties
+
     let photo: IssuePhoto
-    
+    var initialShowAnnotated: Bool = false
+
+    // MARK: - Local State
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var showAnnotated: Bool = false
+    @State private var scale: CGFloat = 1.0
+    @State private var lastScale: CGFloat = 1.0
+    @State private var offset: CGSize = .zero
+    @State private var lastOffset: CGSize = .zero
+
+    // MARK: - Computed Properties
+
+    private var displayImage: UIImage? {
+        if showAnnotated, let annotatedPath = photo.annotatedImagePath {
+            return FileStorageService.shared.loadAnnotatedImage(from: annotatedPath)
+                ?? FileStorageService.shared.loadImage(from: photo.originalImagePath)
+        }
+        return FileStorageService.shared.loadImage(from: photo.originalImagePath)
+    }
+
+    private var hasAnnotatedVersion: Bool {
+        photo.annotatedImagePath != nil
+    }
+
+    private var navigationTitle: String {
+        if let caption = photo.caption, !caption.isEmpty {
+            return caption
+        }
+        return showAnnotated && hasAnnotatedVersion ? "Annotated" : "Original"
+    }
+
+    // MARK: - Body
+
     var body: some View {
         NavigationStack {
             ZStack {
                 Color.black.ignoresSafeArea()
-                
-                if let image = currentImage {
-                    Image(uiImage: image)
+
+                if let uiImage = displayImage {
+                    Image(uiImage: uiImage)
                         .resizable()
                         .scaledToFit
-                        .ignoresSafeArea()
+                        .scaleEffect(scale)
+                        .offset(offset)
+                        .gesture(magnificationGesture)
+                        .gesture(dragGesture)
+                        .onTapGesture(count: 2) {
+                            withAnimation(.spring()) {
+                                scale = 1.0
+                                offset = .zero
+                                lastScale = 1.0
+                                lastOffset = .zero
+                            }
+                        }
                 } else {
-                    ProgressView()
-                        .scaleEffect(1.5)
-                        .tint(.white)
+                    VStack(spacing: Theme.spacingM) {
+                        Image(systemName: "photo")
+                            .font(.system(size: 64))
+                            .foregroundStyle(.secondary)
+                        Text("Unable to load image")
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
+            .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -40,69 +88,84 @@ struct ImageViewerView: View {
                     }
                     .foregroundStyle(.white)
                 }
-                
+
                 ToolbarItem(placement: .topBarTrailing) {
-                    HStack(spacing: 16) {
-                        // Toggle original / annotated
-                        if photo.hasAnnotation {
+                    HStack(spacing: Theme.spacingS) {
+                        // Toggle original/annotated
+                        if hasAnnotatedVersion {
                             Button {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    showAnnotated.toggle()
+                                }
                                 HapticService.shared.play(.light)
-                                showAnnotated.toggle()
-                                loadCurrentImage()
                             } label: {
-                                Text(showAnnotated ? "Original" : "Annotated")
-                                    .font(.subheadline.weight(.medium))
+                                Image(systemName: showAnnotated ? "pencil.circle.fill" : "pencil.circle")
+                                    .font(.system(size: 18))
                             }
                             .foregroundStyle(.white)
+                            .accessibilityLabel(showAnnotated ? "Show original" : "Show annotated")
                         }
-                        
-                        // Share
-                        if currentImage != nil {
-                            Button {
-                                HapticService.shared.play(.medium)
-                                showShareSheet = true
-                            } label: {
-                                Image(systemName: "square.and.arrow.up")
-                            }
-                            .foregroundStyle(.white)
+
+                        // Share button
+                        Button {
+                            shareCurrentImage()
+                        } label: {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.system(size: 18))
                         }
+                        .foregroundStyle(.white)
+                        .accessibilityLabel("Share image")
                     }
                 }
             }
-            .sheet(isPresented: $showShareSheet) {
-                if let image = currentImage {
-                    ShareSheet(activityItems: [image])
+            .toolbarBackground(.black, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+        }
+        .onAppear {
+            showAnnotated = initialShowAnnotated && hasAnnotatedVersion
+        }
+    }
+
+    // MARK: - Gestures
+
+    private var magnificationGesture: some Gesture {
+        MagnificationGesture()
+            .onChanged { value in
+                let delta = value / lastScale
+                lastScale = value
+                scale = min(max(scale * delta, 1.0), 5.0)
+            }
+            .onEnded { _ in
+                lastScale = 1.0
+                if scale < 1.0 {
+                    withAnimation(.spring()) {
+                        scale = 1.0
+                        offset = .zero
+                        lastOffset = .zero
+                    }
                 }
             }
-            .onAppear {
-                loadCurrentImage()
+    }
+
+    private var dragGesture: some Gesture {
+        DragGesture()
+            .onChanged { value in
+                guard scale > 1.0 else { return }
+                offset = CGSize(
+                    width: lastOffset.width + value.translation.width,
+                    height: lastOffset.height + value.translation.height
+                )
             }
-        }
+            .onEnded { _ in
+                lastOffset = offset
+            }
     }
-    
-    private func loadCurrentImage() {
-        if showAnnotated, let annotatedPath = photo.annotatedImagePath {
-            currentImage = FileStorageService.shared.loadAnnotatedImage(from: annotatedPath)
-        } else {
-            currentImage = FileStorageService.shared.loadImage(from: photo.originalImagePath)
-        }
-    }
-}
 
-// MARK: - Share Sheet (UIViewControllerRepresentable)
+    // MARK: - Share
 
-struct ShareSheet: UIViewControllerRepresentable {
-    let activityItems: [Any]
-    var applicationActivities: [UIActivity]? = nil
-    
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        let vc = UIActivityViewController(
-            activityItems: activityItems,
-            applicationActivities: applicationActivities
-        )
-        vc.excludedActivityTypes = [.assignToContact, .postToFacebook, .postToTwitter]
-        return vc
+    private func shareCurrentImage() {
+        guard let image = displayImage else { return }
+        let caption = photo.caption
+        ShareService.shared.shareImage(image, caption: caption)
     }
-    
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }

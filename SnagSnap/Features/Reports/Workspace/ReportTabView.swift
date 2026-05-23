@@ -19,6 +19,7 @@ struct ReportTabView: View {
     let report: InspectionReport
     let viewModel: ReportWorkspaceViewModel
     @State private var showPDFGeneratedToast = false
+    @State private var showRegenerateConfirm = false
 
     // MARK: - Body
 
@@ -26,6 +27,11 @@ struct ReportTabView: View {
         VStack(spacing: Theme.spacingL) {
             // Summary card
             summaryCard
+
+            // PDF status section (if a PDF has been exported)
+            if report.hasExportedPDF {
+                pdfStatusSection
+            }
 
             // Export settings
             exportSettingsSection
@@ -35,8 +41,8 @@ struct ReportTabView: View {
                 watermarkNotice
             }
 
-            // Generate button
-            generateButton
+            // Generate / Share buttons
+            actionButtons
 
             // Error display
             if case .error(let message) = viewModel.pdfState {
@@ -46,10 +52,26 @@ struct ReportTabView: View {
             Spacer(minLength: 0)
         }
         .padding(Theme.spacingM)
+        .onAppear {
+            viewModel.checkForExistingPDF(for: report)
+        }
         .onChange(of: viewModel.pdfState) { _, newState in
             if case .generated = newState {
                 HapticService.shared.play(.success)
             }
+        }
+        .confirmationDialog(
+            "Re-generate PDF?",
+            isPresented: $showRegenerateConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Re-generate", role: .destructive) {
+                HapticService.shared.play(.medium)
+                viewModel.resetPDFState()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("A PDF already exists. Re-generating will overwrite it.")
         }
         .sheet(isPresented: $viewModel.showShareSheet) {
             if let data = viewModel.pdfDataToShare {
@@ -98,6 +120,65 @@ struct ReportTabView: View {
                             .foregroundStyle(Theme.success)
                     }
                     .padding(.top, Theme.spacingS)
+                }
+            }
+        }
+    }
+
+    // MARK: - PDF Status Section
+
+    private var pdfStatusSection: some View {
+        SSCard(padding: Theme.spacingL, cornerRadius: Theme.radiusLarge) {
+            VStack(alignment: .leading, spacing: Theme.spacingM) {
+                HStack {
+                    Image(systemName: "doc.fill")
+                        .font(.title2)
+                        .foregroundStyle(Theme.success)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("PDF Ready")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(.primary)
+
+                        if let display = report.lastExportedDisplay {
+                            Text("Exported \(display)")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        if let path = report.latestPDFPath,
+                           let fileSize = FileStorageService.shared.pdfFileSize(named: path) {
+                            Text(fileSize)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    Spacer()
+                }
+
+                Divider()
+
+                HStack(spacing: Theme.spacingM) {
+                    SSButton(
+                        "Re-generate PDF",
+                        style: .secondary,
+                        icon: "arrow.clockwise",
+                        isFullWidth: true
+                    ) {
+                        showRegenerateConfirm = true
+                    }
+
+                    SSButton(
+                        "Share PDF",
+                        style: .primary,
+                        icon: "square.and.arrow.up",
+                        isFullWidth: true
+                    ) {
+                        HapticService.shared.play(.medium)
+                        viewModel.shareLatestPDF(for: report)
+                    }
+                    .accessibilityLabel("Share PDF report")
                 }
             }
         }
@@ -175,11 +256,12 @@ struct ReportTabView: View {
         .clipShape(RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous))
     }
 
-    // MARK: - Generate Button
+    // MARK: - Action Buttons
 
-    private var generateButton: some View {
+    private var actionButtons: some View {
         VStack(spacing: Theme.spacingM) {
             if viewModel.canSharePDF {
+                // PDF was just generated in this session — show share + re-generate
                 SSButton(
                     "Share PDF",
                     style: .primary,
@@ -192,23 +274,36 @@ struct ReportTabView: View {
                 .accessibilityLabel("Share PDF report")
 
                 SSButton(
-                    "Regenerate PDF",
+                    "Re-generate PDF Report",
                     style: .secondary,
+                    icon: "arrow.clockwise",
                     isFullWidth: true
                 ) {
-                    HapticService.shared.play(.light)
-                    viewModel.resetPDFState()
+                    showRegenerateConfirm = true
                 }
-            } else {
+            } else if report.hasExportedPDF {
+                // PDF exists from a previous session — show re-generate primary
                 SSButton(
-                    "Generate PDF",
+                    "Re-generate PDF Report",
+                    style: .secondary,
+                    icon: "arrow.clockwise",
+                    isLoading: viewModel.isGeneratingPDF,
+                    isFullWidth: true
+                ) {
+                    showRegenerateConfirm = true
+                }
+                .accessibilityLabel("Re-generate PDF report")
+            } else {
+                // No PDF exists yet
+                SSButton(
+                    "Generate PDF Report",
                     style: .primary,
                     icon: "doc.badge.gearshape",
                     isLoading: viewModel.isGeneratingPDF,
                     isFullWidth: true
                 ) {
                     HapticService.shared.play(.medium)
-                    viewModel.generatePDF(for: report)
+                    viewModel.generatePDF(for: report, modelContext: modelContext)
                 }
                 .accessibilityLabel("Generate PDF report")
             }
@@ -277,31 +372,4 @@ private struct ShareSheet: UIViewControllerRepresentable {
         title: "15 Oak Avenue - Move In",
         propertyName: "15 Oak Avenue",
         propertyAddress: "15 Oak Avenue, Manchester M1 1AA",
-        reportType: .moveIn,
-        clientName: "Sarah Johnson",
-        inspectorName: "Mike Thompson"
-    )
-    context.insert(report)
-
-    let kitchen = InspectionArea(name: "Kitchen")
-    context.insert(kitchen)
-    kitchen.report = report
-    report.areas = [kitchen]
-
-    let issue1 = InspectionIssue(title: "Cracked tile", severity: .high, status: .open)
-    context.insert(issue1)
-    issue1.report = report
-    issue1.area = kitchen
-
-    report.issues = [issue1]
-    try? context.save()
-
-    let vm = ReportWorkspaceViewModel()
-
-    return ScrollView {
-        ReportTabView(report: report, viewModel: vm)
-            .padding(Theme.spacingM)
-    }
-    .background(Theme.groupedBackground)
-    .modelContainer(container)
-}
+        report

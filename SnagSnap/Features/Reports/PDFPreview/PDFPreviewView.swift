@@ -27,6 +27,7 @@ struct PDFPreviewView: View {
     @State private var isGenerating = true
     @State private var errorMessage: String?
     @State private var showShareSheet = false
+    @State private var pdfDataToShare: Data?
 
     // MARK: - Body
 
@@ -59,6 +60,7 @@ struct PDFPreviewView: View {
                     HStack(spacing: Theme.spacingM) {
                         if pdfDocument != nil {
                             Button {
+                                pdfDataToShare = pdfDocument?.dataRepresentation()
                                 showShareSheet = true
                             } label: {
                                 Image(systemName: "square.and.arrow.up")
@@ -70,8 +72,8 @@ struct PDFPreviewView: View {
                 }
             }
             .sheet(isPresented: $showShareSheet) {
-                if let data = pdfDocument?.dataRepresentation() {
-                    ShareSheetPDF(activityItems: [data])
+                if let data = pdfDataToShare {
+                    ShareSheet(activityItems: [data])
                 }
             }
             .onAppear {
@@ -175,8 +177,21 @@ struct PDFPreviewView: View {
                 )
                 let document = try PDFReportService.shared.previewPDF(for: report, settings: settings)
 
+                // Save PDF reference to report
+                if let pdfData = document.dataRepresentation() {
+                    let filename = FileStorageService.shared.pdfFilename(for: report.id)
+                    _ = try? FileStorageService.shared.savePDF(pdfData, filename: filename)
+
+                    await MainActor.run {
+                        report.latestPDFPath = filename
+                        report.lastExportedAt = Date()
+                        try? modelContext.save()
+                    }
+                }
+
                 await MainActor.run {
                     self.pdfDocument = document
+                    self.pdfDataToShare = document.dataRepresentation()
                     self.isGenerating = false
                 }
             } catch {
@@ -222,7 +237,7 @@ private struct PDFKitView: UIViewRepresentable {
 // MARK: - Share Sheet
 
 /// UIKit share sheet wrapper for sharing PDF data.
-private struct ShareSheetPDF: UIViewControllerRepresentable {
+private struct ShareSheet: UIViewControllerRepresentable {
     let activityItems: [Any]
     var applicationActivities: [UIActivity]? = nil
 

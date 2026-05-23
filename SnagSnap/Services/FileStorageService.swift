@@ -178,6 +178,18 @@ class FileStorageService {
         return UIImage(data: data)
     }
 
+    /// Loads an annotated image from a stored filename.
+    ///
+    /// - Parameter path: The filename (not full path) of the stored annotated image.
+    /// - Returns: The loaded annotated `UIImage`, or `nil` if the file doesn't exist or is unreadable.
+    func loadAnnotatedImage(from path: String) -> UIImage? {
+        guard !path.isEmpty else { return nil }
+        let url = imagesDirectory.appendingPathComponent(path)
+        guard fileManager.fileExists(atPath: url.path) else { return nil }
+        guard let data = try? Data(contentsOf: url) else { return nil }
+        return UIImage(data: data)
+    }
+
     /// Deletes an image and its associated thumbnail from storage.
     ///
     /// Also attempts to delete any annotated version of the image.
@@ -259,6 +271,66 @@ class FileStorageService {
     /// - Returns: The complete file URL pointing to the PDFs directory.
     func pdfURL(for filename: String) -> URL {
         pdfsDirectory.appendingPathComponent(filename)
+    }
+
+    /// Loads PDF data from disk.
+    ///
+    /// - Parameter named: The filename of the PDF to load.
+    /// - Returns: The raw PDF data, or `nil` if the file doesn't exist.
+    func loadPDF(named filename: String) -> Data? {
+        let url = pdfsDirectory.appendingPathComponent(filename)
+        guard fileManager.fileExists(atPath: url.path) else { return nil }
+        return try? Data(contentsOf: url)
+    }
+
+    /// Checks whether a PDF file exists in storage.
+    ///
+    /// - Parameter named: The filename of the PDF to check.
+    /// - Returns: `true` if the PDF file exists.
+    func pdfExists(named filename: String) -> Bool {
+        let url = pdfsDirectory.appendingPathComponent(filename)
+        return fileManager.fileExists(atPath: url.path)
+    }
+
+    /// Deletes a PDF file from storage by filename.
+    ///
+    /// - Parameter named: The filename of the PDF to delete.
+    /// - Throws: `FileStorageError.fileNotFound` if the file doesn't exist.
+    ///           `FileStorageError.deleteFailed` if deletion fails.
+    func deletePDF(named filename: String) throws {
+        let url = pdfsDirectory.appendingPathComponent(filename)
+        guard fileManager.fileExists(atPath: url.path) else {
+            throw FileStorageError.fileNotFound
+        }
+        do {
+            try fileManager.removeItem(at: url)
+        } catch {
+            throw FileStorageError.deleteFailed
+        }
+    }
+
+    /// Returns a human-readable file size string for a stored PDF.
+    ///
+    /// - Parameter named: The filename of the PDF.
+    /// - Returns: A formatted string like "1.2 MB" or `nil` if the file doesn't exist.
+    func pdfFileSize(named filename: String) -> String? {
+        let url = pdfsDirectory.appendingPathComponent(filename)
+        guard fileManager.fileExists(atPath: url.path),
+              let attrs = try? fileManager.attributesOfItem(atPath: url.path),
+              let fileSize = attrs[.size] as? Int64 else {
+            return nil
+        }
+        let formatter = ByteCountFormatter()
+        formatter.countStyle = .file
+        return formatter.string(fromByteCount: fileSize)
+    }
+
+    /// Returns the standard PDF filename for a given report ID.
+    ///
+    /// - Parameter reportID: The UUID of the inspection report.
+    /// - Returns: A filename string like `"report_<uuid>.pdf"`.
+    func pdfFilename(for reportID: UUID) -> String {
+        "report_\(reportID.uuidString).pdf"
     }
 
     // MARK: - Public Methods - Bulk Operations

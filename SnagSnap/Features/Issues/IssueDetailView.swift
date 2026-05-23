@@ -24,7 +24,8 @@ struct IssueDetailView: View {
     // MARK: - Local State
 
     @State private var selectedPhoto: IssuePhoto?
-    @State private var showFullScreenPhoto: Bool = false
+    @State private var showImageViewer: Bool = false
+    @State private var viewerShowAnnotated: Bool = false
     @State private var showEditSheet: Bool = false
 
     // MARK: - Computed Properties
@@ -55,10 +56,32 @@ struct IssueDetailView: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button("Edit") {
-                    showEditSheet = true
+                HStack(spacing: Theme.spacingS) {
+                    // Share menu
+                    if let photos = issue.photos, !photos.isEmpty {
+                        Menu {
+                            Button {
+                                shareAllImages()
+                            } label: {
+                                Label("Share All Photos", systemImage: "square.and.arrow.up")
+                            }
+
+                            Button {
+                                shareAnnotatedOnly()
+                            } label: {
+                                Label("Share Annotated Only", systemImage: "pencil.circle")
+                            }
+                        } label: {
+                            Image(systemName: "square.and.arrow.up")
+                        }
+                        .foregroundStyle(Theme.primary)
+                    }
+
+                    Button("Edit") {
+                        showEditSheet = true
+                    }
+                    .foregroundStyle(Theme.primary)
                 }
-                .foregroundStyle(Theme.primary)
             }
         }
         .sheet(isPresented: $showEditSheet) {
@@ -66,9 +89,9 @@ struct IssueDetailView: View {
                 CreateEditIssueView(issue: issue, area: area, report: report)
             }
         }
-        .fullScreenCover(isPresented: $showFullScreenPhoto) {
+        .sheet(isPresented: $showImageViewer) {
             if let photo = selectedPhoto {
-                FullScreenPhotoView(photo: photo, dismiss: { showFullScreenPhoto = false })
+                ImageViewerView(photo: photo, initialShowAnnotated: viewerShowAnnotated)
             }
         }
     }
@@ -171,23 +194,63 @@ struct IssueDetailView: View {
     private var photosSection: some View {
         VStack(alignment: .leading, spacing: Theme.spacingS) {
             HStack {
-                SSSectionHeader("Photos (\(issue.photoCount))")
+                let includedCount = (issue.photos ?? []).filter(\.includeInReport).count
+                let totalCount = issue.photoCount
+                if includedCount < totalCount {
+                    SSSectionHeader("Photos (\(totalCount)) — \(includedCount) in PDF")
+                } else {
+                    SSSectionHeader("Photos (\(totalCount))")
+                }
                 Spacer()
             }
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: Theme.spacingM) {
                     ForEach(issue.photos ?? [], id: \.id) { photo in
-                        PhotoThumbnailCard(photo: photo) {
-                            selectedPhoto = photo
-                            showFullScreenPhoto = true
-                        }
+                        PhotoThumbnailCard(
+                            photo: photo,
+                            onTap: {
+                                selectedPhoto = photo
+                                viewerShowAnnotated = false
+                                showImageViewer = true
+                            },
+                            onTapAnnotated: {
+                                selectedPhoto = photo
+                                viewerShowAnnotated = true
+                                showImageViewer = true
+                            }
+                        )
                     }
                 }
                 .padding(.horizontal, Theme.spacingXS)
                 .padding(.vertical, Theme.spacingXS)
             }
         }
+    }
+
+    // MARK: - Share Actions
+
+    private func shareAllImages() {
+        let photos = issue.photos ?? []
+        let images = photos.compactMap { photo -> UIImage? in
+            if let annotatedPath = photo.annotatedImagePath,
+               let annotatedImage = FileStorageService.shared.loadAnnotatedImage(from: annotatedPath) {
+                return annotatedImage
+            }
+            return FileStorageService.shared.loadImage(from: photo.originalImagePath)
+        }
+        guard !images.isEmpty else { return }
+        ShareService.shared.shareImages(images, caption: issue.title)
+    }
+
+    private func shareAnnotatedOnly() {
+        let photos = issue.photos ?? []
+        let images = photos.compactMap { photo -> UIImage? in
+            guard let annotatedPath = photo.annotatedImagePath else { return nil }
+            return FileStorageService.shared.loadAnnotatedImage(from: annotatedPath)
+        }
+        guard !images.isEmpty else { return }
+        ShareService.shared.shareImages(images, caption: "\(issue.title) — Annotated")
     }
 }
 
@@ -196,43 +259,75 @@ struct IssueDetailView: View {
 private struct PhotoThumbnailCard: View {
     let photo: IssuePhoto
     let onTap: () -> Void
+    let onTapAnnotated: (() -> Void)?
 
     var body: some View {
-        Button(action: onTap) {
-            VStack(spacing: Theme.spacingXS) {
-                if let uiImage = FileStorageService.shared.loadThumbnail(from: photo.thumbnailImagePath) {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 120, height: 120)
-                        .clipShape(RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous)
-                                .stroke(Color.gray.opacity(0.2), lineWidth: 0.5)
-                        )
-                        .overlay(annotationOverlay)
-                } else {
-                    RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous)
-                        .fill(Color.gray.opacity(0.15))
-                        .frame(width: 120, height: 120)
-                        .overlay(
-                            Image(systemName: "photo")
-                                .font(.system(size: 32))
-                                .foregroundStyle(.secondary.opacity(0.5))
-                        )
-                }
+        VStack(spacing: Theme.spacingXS) {
+            thumbnailContent
 
-                if let caption = photo.caption, !caption.isEmpty {
-                    Text(caption)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .frame(width: 120)
-                }
+            if let caption = photo.caption, !caption.isEmpty {
+                Text(caption)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .frame(width: 120)
             }
         }
-        .buttonStyle(.plain)
     }
+
+    // MARK: - Thumbnail Content
+
+    @ViewBuilder
+    private var thumbnailContent: some View {
+        if let uiImage = FileStorageService.shared.loadThumbnail(from: photo.thumbnailImagePath) {
+            Image(uiImage: uiImage)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 120, height: 120)
+                .clipShape(RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous)
+                        .stroke(Color.gray.opacity(0.2), lineWidth: 0.5)
+                )
+                .overlay(annotationOverlay)
+                .overlay(includeInReportOverlay)
+                .onTapGesture {
+                    onTap()
+                }
+                .contextMenu {
+                    Button {
+                        onTap()
+                    } label: {
+                        Label("View Original", systemImage: "eye")
+                    }
+
+                    if photo.hasAnnotation {
+                        Button {
+                            onTapAnnotated?()
+                        } label: {
+                            Label("View Annotated", systemImage: "pencil.circle")
+                        }
+                    }
+
+                    Button {
+                        shareImage()
+                    } label: {
+                        Label("Share Image", systemImage: "square.and.arrow.up")
+                    }
+                }
+        } else {
+            RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous)
+                .fill(Color.gray.opacity(0.15))
+                .frame(width: 120, height: 120)
+                .overlay(
+                    Image(systemName: "photo")
+                        .font(.system(size: 32))
+                        .foregroundStyle(.secondary.opacity(0.5))
+                )
+        }
+    }
+
+    // MARK: - Annotation Overlay
 
     @ViewBuilder
     private var annotationOverlay: some View {
@@ -251,103 +346,43 @@ private struct PhotoThumbnailCard: View {
             .frame(width: 120, height: 120)
         }
     }
-}
 
-// MARK: - Full Screen Photo View
+    // MARK: - Include in Report Overlay
 
-private struct FullScreenPhotoView: View {
-    let photo: IssuePhoto
-    let dismiss: () -> Void
-
-    @State private var scale: CGFloat = 1.0
-    @State private var lastScale: CGFloat = 1.0
-    @State private var offset: CGSize = .zero
-    @State private var lastOffset: CGSize = .zero
-
-    private var displayImage: UIImage? {
-        if let annotatedPath = photo.annotatedImagePath,
-           let annotatedImage = FileStorageService.shared.loadImage(from: annotatedPath) {
-            return annotatedImage
-        }
-        return FileStorageService.shared.loadImage(from: photo.originalImagePath)
-    }
-
-    var body: some View {
-        NavigationStack {
-            ZStack {
-                Color.black.ignoresSafeArea()
-
-                if let uiImage = displayImage {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .scaledToFit
-                        .scaleEffect(scale)
-                        .offset(offset)
-                        .gesture(magnificationGesture)
-                        .gesture(dragGesture)
-                        .onTapGesture(count: 2) {
-                            withAnimation(.spring()) {
-                                scale = 1.0
-                                offset = .zero
-                                lastScale = 1.0
-                                lastOffset = .zero
-                            }
-                        }
-                } else {
-                    VStack(spacing: Theme.spacingM) {
-                        Image(systemName: "photo")
-                            .font(.system(size: 64))
-                            .foregroundStyle(.secondary)
-                        Text("Unable to load image")
-                            .foregroundStyle(.secondary)
-                    }
+    @ViewBuilder
+    private var includeInReportOverlay: some View {
+        if !photo.includeInReport {
+            VStack {
+                Spacer()
+                HStack {
+                    Spacer()
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundStyle(.red.opacity(0.9))
+                        .background(Circle().fill(.white))
+                        .padding(4)
                 }
             }
-            .navigationTitle(photo.caption ?? "Photo")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                    .foregroundStyle(.white)
-                }
-            }
-            .toolbarBackground(.black, for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .frame(width: 120, height: 120)
         }
     }
 
-    private var magnificationGesture: some Gesture {
-        MagnificationGesture()
-            .onChanged { value in
-                let delta = value / lastScale
-                lastScale = value
-                scale = min(max(scale * delta, 1.0), 5.0)
-            }
-            .onEnded { _ in
-                lastScale = 1.0
-                if scale < 1.0 {
-                    withAnimation(.spring()) {
-                        scale = 1.0
-                    }
-                }
-            }
-    }
+    // MARK: - Share
 
-    private var dragGesture: some Gesture {
-        DragGesture()
-            .onChanged { value in
-                offset = CGSize(
-                    width: lastOffset.width + value.translation.width,
-                    height: lastOffset.height + value.translation.height
-                )
-            }
-            .onEnded { _ in
-                lastOffset = offset
-            }
+    private func shareImage() {
+        let image: UIImage?
+        if let annotatedPath = photo.annotatedImagePath {
+            image = FileStorageService.shared.loadAnnotatedImage(from: annotatedPath)
+                ?? FileStorageService.shared.loadImage(from: photo.originalImagePath)
+        } else {
+            image = FileStorageService.shared.loadImage(from: photo.originalImagePath)
+        }
+        guard let imageToShare = image else { return }
+        ShareService.shared.shareImage(imageToShare, caption: photo.caption)
     }
 }
+
+// MARK: - Preview
 
 // MARK: - Preview
 
