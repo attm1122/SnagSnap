@@ -3,6 +3,39 @@ import SwiftData
 @testable import SnagSnap
 
 final class JourneyCompletionTests: XCTestCase {
+    func testCreateReportDraftTrimsValuesAndBuildsReport() throws {
+        var draft = CreateReportDraft()
+        draft.title = "  Final Inspection  "
+        draft.propertyName = "  Harbour View  "
+        draft.propertyAddress = "  12 Water Street  "
+        draft.clientName = "  Alex Client  "
+        draft.inspectorName = "  Jamie Inspector  "
+        draft.generalNotes = "  Confirm access code before arrival.  "
+        draft.reportType = .moveOut
+
+        XCTAssertTrue(draft.validate())
+
+        let report = try XCTUnwrap(draft.makeReport())
+        XCTAssertEqual(report.title, "Final Inspection")
+        XCTAssertEqual(report.propertyName, "Harbour View")
+        XCTAssertEqual(report.propertyAddress, "12 Water Street")
+        XCTAssertEqual(report.clientName, "Alex Client")
+        XCTAssertEqual(report.inspectorName, "Jamie Inspector")
+        XCTAssertEqual(report.generalNotes, "Confirm access code before arrival.")
+        XCTAssertEqual(report.reportType, .moveOut)
+    }
+
+    func testCreateReportDraftRejectsMissingRequiredFields() {
+        var draft = CreateReportDraft()
+        draft.title = "  "
+        draft.propertyName = "Property"
+        draft.propertyAddress = "Address"
+
+        XCTAssertFalse(draft.validate())
+        XCTAssertTrue(draft.showValidationErrors)
+        XCTAssertNil(draft.makeReport())
+    }
+
     func testOrganizeJourneyAreaSavePersistsAndCompletes() throws {
         let context = try makeContext()
         let report = InspectionReport(

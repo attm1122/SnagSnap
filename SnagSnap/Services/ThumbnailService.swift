@@ -351,7 +351,7 @@ class ThumbnailService {
         case .aspectFit: modeString = "fit"
         case .stretch: modeString = "stretch"
         }
-        let radiusString = cornerRadius != nil ? "_r\(cornerRadius!)" : ""
+        let radiusString = cornerRadius.map { "_r\($0)" } ?? ""
         return "\(path)_\(Int(size.width))x\(Int(size.height))_\(modeString)\(radiusString)" as NSString
     }
 }

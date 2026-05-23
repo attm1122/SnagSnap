@@ -6,12 +6,9 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - CreateReportViewModel
+// MARK: - CreateReportDraft
 
-@Observable
-final class CreateReportViewModel {
-
-    // MARK: - Form State
+struct CreateReportDraft {
 
     var title: String = ""
     var propertyName: String = ""
@@ -23,13 +20,6 @@ final class CreateReportViewModel {
     var generalNotes: String = ""
     var showValidationErrors: Bool = false
 
-    // MARK: - Dependencies
-
-    private let modelContext: ModelContext
-    private let onComplete: (InspectionReport) -> Void
-
-    // MARK: - Computed Properties
-
     var isTitleValid: Bool { !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
     var isPropertyNameValid: Bool { !propertyName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
     var isPropertyAddressValid: Bool { !propertyAddress.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
@@ -38,24 +28,12 @@ final class CreateReportViewModel {
         isTitleValid && isPropertyNameValid && isPropertyAddressValid
     }
 
-    // MARK: - Initialization
-
-    init(
-        modelContext: ModelContext,
-        prefilledInspectorName: String = "",
-        onComplete: @escaping (InspectionReport) -> Void
-    ) {
-        self.modelContext = modelContext
-        self.onComplete = onComplete
-        self.inspectorName = prefilledInspectorName
+    mutating func validate() -> Bool {
+        showValidationErrors = true
+        return canCreate
     }
 
-    // MARK: - Actions
-
-    /// Creates a new inspection report and persists it.
-    func createReport() -> InspectionReport? {
-        showValidationErrors = true
-
+    func makeReport() -> InspectionReport? {
         guard canCreate else { return nil }
 
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -65,7 +43,7 @@ final class CreateReportViewModel {
         let trimmedInspector = inspectorName.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedNotes = generalNotes.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        let report = InspectionReport(
+        return InspectionReport(
             title: trimmedTitle,
             propertyName: trimmedProperty,
             propertyAddress: trimmedAddress,
@@ -75,18 +53,6 @@ final class CreateReportViewModel {
             generalNotes: trimmedNotes.isEmpty ? nil : trimmedNotes,
             inspectionDate: inspectionDate
         )
-
-        modelContext.insert(report)
-
-        do {
-            try modelContext.save()
-            EntitlementManager.shared.incrementReportCount()
-            onComplete(report)
-            return report
-        } catch {
-            print("Failed to save report: \(error.localizedDescription)")
-            return nil
-        }
     }
 }
 
@@ -97,11 +63,11 @@ struct CreateReportView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.colorScheme) private var colorScheme
 
     // MARK: - State
 
-    @State private var viewModel: CreateReportViewModel?
+    @State private var draft = CreateReportDraft()
+    @State private var hasPrefilledInspectorName = false
     @State private var showPaywall = false
     @State private var showToast = false
     @State private var toastMessage = ""
@@ -110,7 +76,7 @@ struct CreateReportView: View {
     // MARK: - Injected Dependencies
 
     private let injectedModelContext: ModelContext?
-    var onComplete: ((InspectionReport) -> Void)?
+    private let onComplete: ((InspectionReport) -> Void)?
 
     // MARK: - Initialization
 
@@ -174,27 +140,12 @@ struct CreateReportView: View {
 
             ToolbarItem(placement: .confirmationAction) {
                 Button("Create") {
-                    if viewModel?.createReport() != nil {
-                        HapticService.shared.play(.success)
-                        toastMessage = "Report created"
-                        showToast = true
-                        if onComplete == nil {
-                            dismiss()
-                        }
-                    } else {
-                        HapticService.shared.play(.warning)
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.3)) {
-                            shakeValidation = true
-                        }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                            shakeValidation = false
-                        }
-                    }
+                    createReport()
                 }
                 .buttonStyle(.animated(haptic: .medium))
-                .disabled(!(viewModel?.canCreate ?? false) || !EntitlementManager.shared.canCreateNewReport())
+                .disabled(!draft.canCreate || !EntitlementManager.shared.canCreateNewReport())
                 .foregroundStyle(
-                    (viewModel?.canCreate ?? false) && EntitlementManager.shared.canCreateNewReport()
+                    draft.canCreate && EntitlementManager.shared.canCreateNewReport()
                     ? Theme.primary
                     : Theme.secondaryLabel
                 )
@@ -204,16 +155,7 @@ struct CreateReportView: View {
             }
         }
         .onAppear {
-            // Prefill inspector name from UserProfile if available
-            let inspectorName = fetchUserProfileInspectorName()
-            let ctx = injectedModelContext ?? modelContext
-            viewModel = CreateReportViewModel(
-                modelContext: ctx,
-                prefilledInspectorName: inspectorName,
-                onComplete: { [self] report in
-                    self.onComplete?(report)
-                }
-            )
+            prefillInspectorNameIfNeeded()
         }
         .dismissKeyboardOnTap()
         .toast(isPresented: $showToast, message: toastMessage, style: .success, duration: 2.0)
@@ -270,11 +212,8 @@ struct CreateReportView: View {
                 RequiredTextInput(
                     title: "Report Title",
                     placeholder: "e.g. Final inspection - Unit 4",
-                    text: Binding(
-                    get: { viewModel?.title ?? "" },
-                    set: { viewModel?.title = $0 }
-                    ),
-                    errorMessage: (viewModel?.showValidationErrors ?? false) && !(viewModel?.isTitleValid ?? true)
+                    text: $draft.title,
+                    errorMessage: draft.showValidationErrors && !draft.isTitleValid
                     ? "Report title is required"
                     : nil
                 )
@@ -282,11 +221,8 @@ struct CreateReportView: View {
                 RequiredTextInput(
                     title: "Property Name",
                     placeholder: "e.g. Harbour View Apartments",
-                    text: Binding(
-                    get: { viewModel?.propertyName ?? "" },
-                    set: { viewModel?.propertyName = $0 }
-                    ),
-                    errorMessage: (viewModel?.showValidationErrors ?? false) && !(viewModel?.isPropertyNameValid ?? true)
+                    text: $draft.propertyName,
+                    errorMessage: draft.showValidationErrors && !draft.isPropertyNameValid
                     ? "Property name is required"
                     : nil
                 )
@@ -294,12 +230,9 @@ struct CreateReportView: View {
                 RequiredTextInput(
                     title: "Property Address",
                     placeholder: "Street address",
-                    text: Binding(
-                    get: { viewModel?.propertyAddress ?? "" },
-                    set: { viewModel?.propertyAddress = $0 }
-                    ),
+                    text: $draft.propertyAddress,
                     axis: .vertical,
-                    errorMessage: (viewModel?.showValidationErrors ?? false) && !(viewModel?.isPropertyAddressValid ?? true)
+                    errorMessage: draft.showValidationErrors && !draft.isPropertyAddressValid
                     ? "Property address is required"
                     : nil
                 )
@@ -313,10 +246,7 @@ struct CreateReportView: View {
 
                     DatePicker(
                         "Inspection Date",
-                        selection: Binding(
-                            get: { viewModel?.inspectionDate ?? Date() },
-                            set: { viewModel?.inspectionDate = $0 }
-                        ),
+                        selection: $draft.inspectionDate,
                         displayedComponents: .date
                     )
                     .labelsHidden()
@@ -340,20 +270,13 @@ struct CreateReportView: View {
     private var reportTypeSection: some View {
         FormCard(title: "Report Type") {
             HStack(spacing: Theme.spacingM) {
-                Image(systemName: viewModel?.reportType.icon ?? ReportType.general.icon)
+                Image(systemName: draft.reportType.icon)
                     .font(.title3)
                     .foregroundStyle(Theme.primary)
                     .frame(width: 40, height: 40)
                     .background(Theme.primaryLight, in: RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous))
 
-                Picker("Type", selection: Binding(
-                    get: { viewModel?.reportType ?? .general },
-                    set: { newValue in
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                            viewModel?.reportType = newValue
-                        }
-                    }
-                )) {
+                Picker("Type", selection: $draft.reportType.animation(.spring(response: 0.3, dampingFraction: 0.7))) {
                     ForEach(ReportType.allCases) { type in
                         Label(type.displayName, systemImage: type.icon)
                             .tag(type)
@@ -382,19 +305,13 @@ struct CreateReportView: View {
                 RequiredTextInput(
                     title: "Client / Tenant Name",
                     placeholder: "Optional",
-                    text: Binding(
-                        get: { viewModel?.clientName ?? "" },
-                        set: { viewModel?.clientName = $0 }
-                    )
+                    text: $draft.clientName
                 )
 
                 RequiredTextInput(
                     title: "Inspector Name",
                     placeholder: "Optional",
-                    text: Binding(
-                        get: { viewModel?.inspectorName ?? "" },
-                        set: { viewModel?.inspectorName = $0 }
-                    )
+                    text: $draft.inspectorName
                 )
             }
         }
@@ -405,7 +322,7 @@ struct CreateReportView: View {
     private var notesSection: some View {
         FormCard(title: "General Notes") {
             ZStack(alignment: .topLeading) {
-                if (viewModel?.generalNotes ?? "").isEmpty {
+                if draft.generalNotes.isEmpty {
                     Text("Add context, access notes, or inspection scope.")
                         .font(Theme.body)
                         .foregroundStyle(Theme.tertiaryLabel)
@@ -413,10 +330,7 @@ struct CreateReportView: View {
                         .padding(.vertical, 8)
                 }
 
-                TextEditor(text: Binding(
-                    get: { viewModel?.generalNotes ?? "" },
-                    set: { viewModel?.generalNotes = $0 }
-                ))
+                TextEditor(text: $draft.generalNotes)
                 .font(Theme.body)
                 .foregroundStyle(Theme.ink)
                 .scrollContentBackground(.hidden)
@@ -435,9 +349,63 @@ struct CreateReportView: View {
 
     // MARK: - Helpers
 
+    private var activeModelContext: ModelContext {
+        injectedModelContext ?? modelContext
+    }
+
+    private func createReport() {
+        guard EntitlementManager.shared.canCreateNewReport(), draft.validate() else {
+            showValidationWarning()
+            return
+        }
+
+        guard let report = draft.makeReport() else {
+            showValidationWarning()
+            return
+        }
+
+        activeModelContext.insert(report)
+
+        do {
+            try activeModelContext.save()
+            EntitlementManager.shared.incrementReportCount()
+            onComplete?(report)
+            HapticService.shared.play(.success)
+            toastMessage = "Report created"
+            showToast = true
+            if onComplete == nil {
+                dismiss()
+            }
+        } catch {
+            activeModelContext.delete(report)
+            HapticService.shared.play(.error)
+            toastMessage = "Couldn't save report"
+            showToast = true
+            print("Failed to save report: \(error.localizedDescription)")
+        }
+    }
+
+    private func showValidationWarning() {
+        HapticService.shared.play(.warning)
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.3)) {
+            shakeValidation = true
+        }
+
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(400))
+            shakeValidation = false
+        }
+    }
+
+    private func prefillInspectorNameIfNeeded() {
+        guard !hasPrefilledInspectorName, draft.inspectorName.isEmpty else { return }
+        draft.inspectorName = fetchUserProfileInspectorName()
+        hasPrefilledInspectorName = true
+    }
+
     private func fetchUserProfileInspectorName() -> String {
         let descriptor = FetchDescriptor<UserProfile>()
-        let profiles = (try? modelContext.fetch(descriptor)) ?? []
+        let profiles = (try? activeModelContext.fetch(descriptor)) ?? []
         return profiles.first?.inspectorName ?? ""
     }
 }
@@ -525,31 +493,32 @@ private struct RequiredTextInput: View {
     }
 }
 
-// MARK: - Feature Row
-
-private struct FeatureRow: View {
-    let icon: String
-    let text: String
-
-    var body: some View {
-        HStack(spacing: Theme.spacingS) {
-            Image(systemName: icon)
-                .foregroundStyle(Theme.primary)
-                .frame(width: 28)
-            Text(text)
-                .font(.body)
-                .foregroundStyle(.primary)
-        }
-    }
-}
-
 // MARK: - Preview
 
 #Preview("Create Report") {
-    let schema = Schema([InspectionReport.self, InspectionArea.self, InspectionIssue.self, IssuePhoto.self, UserProfile.self])
-    let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-    let container = try! ModelContainer(for: schema, configurations: [config])
+    CreateReportPreview()
+}
 
-    return CreateReportView()
-        .modelContainer(container)
+private struct CreateReportPreview: View {
+    var body: some View {
+        if let container = try? Self.makeContainer() {
+            CreateReportView()
+                .modelContainer(container)
+        } else {
+            Text("Preview unavailable")
+                .foregroundStyle(Theme.secondaryLabel)
+        }
+    }
+
+    private static func makeContainer() throws -> ModelContainer {
+        let schema = Schema([
+            InspectionReport.self,
+            InspectionArea.self,
+            InspectionIssue.self,
+            IssuePhoto.self,
+            UserProfile.self
+        ])
+        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        return try ModelContainer(for: schema, configurations: [config])
+    }
 }
