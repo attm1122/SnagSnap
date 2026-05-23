@@ -24,8 +24,6 @@ struct SSButton: View {
     let isFullWidth: Bool
     let action: () -> Void
 
-    @State private var isPressed = false
-
     // MARK: - Initializer
 
     /// Creates a new ``SSButton``.
@@ -114,12 +112,10 @@ struct SSButton: View {
             .foregroundStyle(foregroundColor)
             .clipShape(clipShape)
             .overlay(borderOverlay)
-            .scaleEffect(isPressed && !isDisabled && !isLoading ? 0.97 : 1.0)
             .opacity(isDisabled || isLoading ? 0.6 : 1.0)
         }
         .disabled(isDisabled || isLoading)
         .buttonStyle(.plain)
-        .pressDetectable(isPressed: $isPressed)
         .accessibilityLabel(accessibilityLabelText)
     }
 
@@ -194,29 +190,6 @@ struct SSButton: View {
             EmptyView()
         }
     }
-}
-
-// MARK: - Press Detection Helper
-
-/// A view modifier that tracks whether a press is currently active.
-private struct PressDetectableModifier: ViewModifier {
-    @Binding var isPressed: Bool
-
-    func body(content: Content) -> some View {
-        content
-            .simultaneousGesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { _ in isPressed = true }
-                    .onEnded { _ in isPressed = false }
-            )
-    }
-}
-
-private extension View {
-    func pressDetectable(isPressed: Binding<Bool>) -> some View {
-        modifier(PressDetectableModifier(isPressed: isPressed))
-    }
-
 }
 
 // MARK: - Preview

@@ -122,98 +122,96 @@ struct CreateReportView: View {
     // MARK: - Body
 
     var body: some View {
-        NavigationStack {
-            Form {
-                // Paywall banner (if applicable)
-                if !EntitlementManager.shared.canCreateNewReport() {
-                    paywallSection
-                        .entryAnimation(delay: 0.0)
-                }
-
-                // Required fields
-                requiredFieldsSection
-                    .entryAnimation(delay: 0.05)
-
-                // Report type
-                reportTypeSection
-                    .entryAnimation(delay: 0.1)
-
-                // Optional fields
-                optionalFieldsSection
-                    .entryAnimation(delay: 0.15)
-
-                // Notes
-                notesSection
-                    .entryAnimation(delay: 0.2)
+        Form {
+            // Paywall banner (if applicable)
+            if !EntitlementManager.shared.canCreateNewReport() {
+                paywallSection
+                    .entryAnimation(delay: 0.0)
             }
-            .scrollContentBackground(.hidden)
-            .background(
-                LinearGradient(
-                    colors: [Theme.blueSurfaceStrong, Theme.background, Theme.background],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
-            )
-            .tint(Theme.primary)
-            .navigationTitle("New Report")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(Theme.blueSurfaceStrong, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                    .buttonStyle(.animated(haptic: .light))
-                    .foregroundStyle(Theme.primary)
-                }
 
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Create") {
-                        if viewModel?.createReport() != nil {
-                            HapticService.shared.play(.success)
-                            toastMessage = "Report created"
-                            showToast = true
-                            if onComplete == nil {
-                                dismiss()
-                            }
-                        } else {
-                            HapticService.shared.play(.warning)
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.3)) {
-                                shakeValidation = true
-                            }
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                                shakeValidation = false
-                            }
+            // Required fields
+            requiredFieldsSection
+                .entryAnimation(delay: 0.05)
+
+            // Report type
+            reportTypeSection
+                .entryAnimation(delay: 0.1)
+
+            // Optional fields
+            optionalFieldsSection
+                .entryAnimation(delay: 0.15)
+
+            // Notes
+            notesSection
+                .entryAnimation(delay: 0.2)
+        }
+        .scrollContentBackground(.hidden)
+        .background(
+            LinearGradient(
+                colors: [Theme.blueSurfaceStrong, Theme.background, Theme.background],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+        )
+        .tint(Theme.primary)
+        .navigationTitle("New Report")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(Theme.blueSurfaceStrong, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Cancel") {
+                    dismiss()
+                }
+                .buttonStyle(.animated(haptic: .light))
+                .foregroundStyle(Theme.primary)
+            }
+
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Create") {
+                    if viewModel?.createReport() != nil {
+                        HapticService.shared.play(.success)
+                        toastMessage = "Report created"
+                        showToast = true
+                        if onComplete == nil {
+                            dismiss()
+                        }
+                    } else {
+                        HapticService.shared.play(.warning)
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.3)) {
+                            shakeValidation = true
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                            shakeValidation = false
                         }
                     }
-                    .buttonStyle(.animated(haptic: .medium))
-                    .disabled(!(viewModel?.canCreate ?? false) || !EntitlementManager.shared.canCreateNewReport())
-                    .foregroundStyle(
-                        (viewModel?.canCreate ?? false) && EntitlementManager.shared.canCreateNewReport()
-                        ? Theme.primary
-                        : Theme.secondaryLabel
-                    )
-                    .font(.body.weight(.semibold))
-                    .accessibilityLabel("Create report")
-                    .offset(x: shakeValidation ? 10 : 0)
                 }
-            }
-            .onAppear {
-                // Prefill inspector name from UserProfile if available
-                let inspectorName = fetchUserProfileInspectorName()
-                let ctx = injectedModelContext ?? modelContext
-                viewModel = CreateReportViewModel(
-                    modelContext: ctx,
-                    prefilledInspectorName: inspectorName,
-                    onComplete: { [self] report in
-                        self.onComplete?(report)
-                    }
+                .buttonStyle(.animated(haptic: .medium))
+                .disabled(!(viewModel?.canCreate ?? false) || !EntitlementManager.shared.canCreateNewReport())
+                .foregroundStyle(
+                    (viewModel?.canCreate ?? false) && EntitlementManager.shared.canCreateNewReport()
+                    ? Theme.primary
+                    : Theme.secondaryLabel
                 )
+                .font(.body.weight(.semibold))
+                .accessibilityLabel("Create report")
+                .offset(x: shakeValidation ? 10 : 0)
             }
-            .dismissKeyboardOnTap()
-            .toast(isPresented: $showToast, message: toastMessage, style: .success, duration: 2.0)
         }
+        .onAppear {
+            // Prefill inspector name from UserProfile if available
+            let inspectorName = fetchUserProfileInspectorName()
+            let ctx = injectedModelContext ?? modelContext
+            viewModel = CreateReportViewModel(
+                modelContext: ctx,
+                prefilledInspectorName: inspectorName,
+                onComplete: { [self] report in
+                    self.onComplete?(report)
+                }
+            )
+        }
+        .dismissKeyboardOnTap()
+        .toast(isPresented: $showToast, message: toastMessage, style: .success, duration: 2.0)
     }
 
     // MARK: - Paywall Section

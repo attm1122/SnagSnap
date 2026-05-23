@@ -72,10 +72,10 @@ final class AppRouter {
     static let shared = AppRouter()
 
     /// Navigation path for the Home tab
-    var homePath = NavigationPath()
+    var homePath: [Route] = []
 
     /// Navigation path for the Settings tab
-    var settingsPath = NavigationPath()
+    var settingsPath: [Route] = []
 
     /// Currently selected tab
     var selectedTab: Tab = .home
@@ -114,7 +114,7 @@ final class AppRouter {
         initialTab: WorkspaceTab = .overview,
         launchAction: WorkspaceLaunchAction = .none
     ) {
-        homePath.append(Route.reportWorkspace(report, initialTab: initialTab, launchAction: launchAction))
+        appendToHomePath(Route.reportWorkspace(report, initialTab: initialTab, launchAction: launchAction))
     }
 
     /// Navigate to report creation
@@ -122,42 +122,44 @@ final class AppRouter {
         targetTab: WorkspaceTab = .overview,
         launchAction: WorkspaceLaunchAction = .none
     ) {
-        homePath.append(Route.createReport(targetTab: targetTab, launchAction: launchAction))
+        appendToHomePath(Route.createReport(targetTab: targetTab, launchAction: launchAction))
     }
 
     /// Replace the current home route with a new route.
     func replaceCurrentHomeRoute(with route: Route) {
-        if !homePath.isEmpty {
-            homePath.removeLast()
+        var path = homePath
+        if !path.isEmpty {
+            path.removeLast()
         }
-        homePath.append(route)
+        path.append(route)
+        homePath = path
     }
 
     /// Navigate to issue editor
     func navigateToIssueEditor(issue: InspectionIssue?, area: InspectionArea?, report: InspectionReport) {
-        homePath.append(Route.issueEditor(issue: issue, area: area, report: report))
+        appendToHomePath(Route.issueEditor(issue: issue, area: area, report: report))
     }
 
     /// Navigate to area editor
     func navigateToAreaEditor(area: InspectionArea?, report: InspectionReport) {
-        homePath.append(Route.areaEditor(area: area, report: report))
+        appendToHomePath(Route.areaEditor(area: area, report: report))
     }
 
     /// Navigate to photo annotation
     func navigateToPhotoAnnotation(_ photo: IssuePhoto) {
-        homePath.append(Route.photoAnnotation(photo))
+        appendToHomePath(Route.photoAnnotation(photo))
     }
 
     /// Navigate to PDF preview
     func navigateToPDFPreview(report: InspectionReport) {
-        homePath.append(Route.pdfPreview(report))
+        appendToHomePath(Route.pdfPreview(report))
     }
 
     // MARK: - Navigation Actions (Settings Tab)
 
     /// Navigate to paywall
     func navigateToPaywall() {
-        settingsPath.append(Route.paywall)
+        appendToSettingsPath(Route.paywall)
     }
 
     // MARK: - Back Navigation
@@ -167,11 +169,11 @@ final class AppRouter {
         switch selectedTab {
         case .home:
             if !homePath.isEmpty {
-                homePath.removeLast()
+                removeLastHomeRoute()
             }
         case .settings:
             if !settingsPath.isEmpty {
-                settingsPath.removeLast()
+                removeLastSettingsRoute()
             }
         }
     }
@@ -181,11 +183,11 @@ final class AppRouter {
         switch tab {
         case .home:
             if !homePath.isEmpty {
-                homePath.removeLast()
+                removeLastHomeRoute()
             }
         case .settings:
             if !settingsPath.isEmpty {
-                settingsPath.removeLast()
+                removeLastSettingsRoute()
             }
         }
     }
@@ -196,9 +198,9 @@ final class AppRouter {
     func popToRoot() {
         switch selectedTab {
         case .home:
-            homePath.removeLast(homePath.count)
+            homePath = []
         case .settings:
-            settingsPath.removeLast(settingsPath.count)
+            settingsPath = []
         }
     }
 
@@ -206,17 +208,43 @@ final class AppRouter {
     func popToRoot(on tab: Tab) {
         switch tab {
         case .home:
-            homePath.removeLast(homePath.count)
+            homePath = []
         case .settings:
-            settingsPath.removeLast(settingsPath.count)
+            settingsPath = []
         }
     }
 
     /// Pop to root on all paths and reset to home tab
     func resetToRoot() {
-        homePath.removeLast(homePath.count)
-        settingsPath.removeLast(settingsPath.count)
+        homePath = []
+        settingsPath = []
         selectedTab = .home
+    }
+
+    // MARK: - Path Mutation Helpers
+
+    private func appendToHomePath(_ route: Route) {
+        var path = homePath
+        path.append(route)
+        homePath = path
+    }
+
+    private func appendToSettingsPath(_ route: Route) {
+        var path = settingsPath
+        path.append(route)
+        settingsPath = path
+    }
+
+    private func removeLastHomeRoute() {
+        var path = homePath
+        path.removeLast()
+        homePath = path
+    }
+
+    private func removeLastSettingsRoute() {
+        var path = settingsPath
+        path.removeLast()
+        settingsPath = path
     }
 
     // MARK: - Model Fetching Helpers
