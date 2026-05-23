@@ -316,13 +316,12 @@ class FileStorageService {
     func pdfFileSize(named filename: String) -> String? {
         let url = pdfsDirectory.appendingPathComponent(filename)
         guard fileManager.fileExists(atPath: url.path),
-              let attrs = try? fileManager.attributesOfItem(atPath: url.path),
-              let fileSize = attrs[.size] as? Int64 else {
+              let fileSize = try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize else {
             return nil
         }
         let formatter = ByteCountFormatter()
         formatter.countStyle = .file
-        return formatter.string(fromByteCount: fileSize)
+        return formatter.string(fromByteCount: Int64(fileSize))
     }
 
     /// Returns the standard PDF filename for a given report ID.
