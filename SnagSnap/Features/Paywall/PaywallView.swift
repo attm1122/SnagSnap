@@ -76,11 +76,22 @@ struct PaywallView: View {
                 }
             }
         }
+        .onChange(of: viewModel.showErrorAlert) { _, showing in
+            if showing {
+                HapticService.shared.play(.error)
+            }
+        }
         .toast(
             isPresented: $showPurchaseSuccess,
             message: "Welcome to Pro!",
             style: .success,
             duration: 2.5
+        )
+        .toast(
+            isPresented: $showRestoreToast,
+            message: "Purchases restored!",
+            style: .success,
+            duration: 2.0
         )
     }
 
@@ -297,6 +308,10 @@ struct PaywallView: View {
             SSButton(title: "Restore Purchases", style: .tertiary) {
                 Task {
                     await viewModel.restorePurchases()
+                    if viewModel.purchaseSuccess {
+                        HapticService.shared.play(.success)
+                        showRestoreToast = true
+                    }
                 }
             }
             .disabled(viewModel.isPurchasing)
@@ -417,4 +432,18 @@ private struct ProductCard: View {
                             )
                     )
                     .shadow(
-                        color: isSelected ? Theme.primary.opacity(0.12) : Color.cle
+                        color: isSelected ? Theme.primary.opacity(0.12) : Color.clear,
+                        radius: isSelected ? 8 : 0
+                    )
+            )
+        }
+        .buttonStyle(.animated(haptic: .light))
+        .disabled(isProcessing)
+    }
+}
+
+// MARK: - Preview
+
+#Preview {
+    PaywallView()
+}

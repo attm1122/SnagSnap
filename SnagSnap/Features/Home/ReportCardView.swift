@@ -17,10 +17,24 @@ import Foundation
 struct ReportCardView: View {
     let report: InspectionReport
     var onDelete: ((InspectionReport) -> Void)?
+    var onTap: (() -> Void)?
 
     // MARK: - Body
 
     var body: some View {
+        Button {
+            HapticService.shared.play(.light)
+            onTap?()
+        } label: {
+            cardContent
+        }
+        .buttonStyle(.animated(haptic: .light))
+        .animation(.easeInOut(duration: 0.15), value: report.status)
+    }
+
+    // MARK: - Card Content
+
+    private var cardContent: some View {
         SSCard(
             padding: Theme.spacingM,
             cornerRadius: Theme.radiusMedium,
@@ -38,6 +52,7 @@ struct ReportCardView: View {
                     Spacer()
 
                     IssueCountBadge(count: report.issueCount)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: report.issueCount)
                 }
 
                 // Property name and address
@@ -82,6 +97,7 @@ struct ReportCardView: View {
                             .font(.system(size: 10))
                             .foregroundStyle(Theme.success)
                             .accessibilityLabel("PDF exported")
+                            .scaleEntryAnimation(delay: 0.1)
                     }
 
                     // Status dot
@@ -107,6 +123,8 @@ private struct IssueCountBadge: View {
             Text("\(count)")
                 .font(.system(size: 13, weight: .semibold, design: .rounded))
                 .foregroundStyle(Theme.primary)
+                .contentTransition(.numericText())
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: count)
         }
     }
 }

@@ -18,15 +18,19 @@ struct SettingsView: View {
             VStack(spacing: Theme.spacingL) {
                 // Profile Section
                 profileSection
+                    .entryAnimation(delay: 0.0)
 
                 // Subscription Section
                 subscriptionSection
+                    .entryAnimation(delay: 0.05)
 
                 // Default Settings Section
                 defaultSettingsSection
+                    .entryAnimation(delay: 0.1)
 
                 // About Section
                 aboutSection
+                    .entryAnimation(delay: 0.15)
             }
             .padding(.horizontal, Theme.spacingM)
             .padding(.vertical, Theme.spacingL)
@@ -97,8 +101,10 @@ struct SettingsView: View {
 
                     // Save Button
                     SSButton(title: "Save Profile", style: .primary) {
+                        HapticService.shared.play(.success)
                         viewModel.saveProfile()
                     }
+                    .buttonStyle(.animated(haptic: .medium))
                     .accessibilityLabel("Save profile settings")
                     .padding(.top, 4)
                 }
@@ -186,6 +192,7 @@ struct SettingsView: View {
                     SSButton(title: "Restore Purchases", style: .tertiary) {
                         Task {
                             await viewModel.restorePurchases()
+                            HapticService.shared.play(viewModel.showRestoreAlert && viewModel.restoreMessage?.contains("success") == true ? .success : .warning)
                         }
                     }
                     .accessibilityLabel("Restore previous purchases")

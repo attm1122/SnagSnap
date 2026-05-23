@@ -218,20 +218,22 @@ struct HomeDashboardView: View {
         } else {
             LazyVStack(spacing: Theme.spacingM) {
                 ForEach(Array(recent.enumerated()), id: \.element.id) { index, report in
-                    ReportCardView(report: report) { reportToDelete in
-                        HapticService.shared.play(.success)
-                        toastMessage = "Report deleted"
-                        showToast = true
-                        viewModel.deleteReport(reportToDelete)
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        HapticService.shared.play(.medium)
-                        router.navigateToReport(report)
-                    }
+                    ReportCardView(
+                        report: report,
+                        onDelete: { reportToDelete in
+                            HapticService.shared.play(.success)
+                            toastMessage = "Report deleted"
+                            showToast = true
+                            viewModel.deleteReport(reportToDelete)
+                        },
+                        onTap: {
+                            HapticService.shared.play(.medium)
+                            router.navigateToReport(report)
+                        }
+                    )
                     .accessibilityLabel("Report: \(report.title)")
                     .padding(.horizontal, Theme.spacingM)
-                    .entryAnimation(delay: 0.1 + Double(index) * 0.03)
+                    .animateOnAppear(delay: 0.1 + Double(index) * 0.03, duration: 0.4)
                 }
             }
         }
