@@ -174,7 +174,9 @@ struct CreateReportView: View {
                             HapticService.shared.play(.success)
                             toastMessage = "Report created"
                             showToast = true
-                            dismiss()
+                            if onComplete == nil {
+                                dismiss()
+                            }
                         } else {
                             HapticService.shared.play(.warning)
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.3)) {

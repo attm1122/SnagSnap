@@ -57,17 +57,19 @@ struct MainTabView: View {
     @ViewBuilder
     private func homeRouteDestination(for route: Route) -> some View {
         switch route {
-        case .createReport:
+        case .createReport(let targetTab):
             CreateReportView(
                 modelContext: modelContext,
                 onComplete: { report in
-                    router.navigateToReport(report)
+                    router.replaceCurrentHomeRoute(
+                        with: .reportWorkspace(report, initialTab: targetTab)
+                    )
                 }
             )
 
-        case .reportWorkspace(let reportID):
+        case .reportWorkspace(let reportID, let initialTab):
             if let report = AppRouter.fetchReport(id: reportID, context: modelContext) {
-                ReportWorkspaceView(report: report)
+                ReportWorkspaceView(report: report, initialTab: initialTab)
             } else {
                 errorView(message: "Report not found")
             }

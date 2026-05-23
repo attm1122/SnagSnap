@@ -10,10 +10,10 @@ import SwiftData
 /// the model context using these identifiers.
 enum Route: Hashable {
     /// Create a new inspection report
-    case createReport
+    case createReport(targetTab: WorkspaceTab)
 
     /// Navigate to a report's workspace/editor
-    case reportWorkspace(reportID: UUID)
+    case reportWorkspace(reportID: UUID, initialTab: WorkspaceTab)
 
     /// Open the issue editor (nil issue = new issue)
     case issueEditor(issueID: UUID?, areaID: UUID?, reportID: UUID)
@@ -35,8 +35,8 @@ enum Route: Hashable {
 
     // MARK: Convenience initializers with model objects
 
-    static func reportWorkspace(_ report: InspectionReport) -> Route {
-        .reportWorkspace(reportID: report.id)
+    static func reportWorkspace(_ report: InspectionReport, initialTab: WorkspaceTab = .overview) -> Route {
+        .reportWorkspace(reportID: report.id, initialTab: initialTab)
     }
 
     static func issueEditor(issue: InspectionIssue?, area: InspectionArea?, report: InspectionReport) -> Route {
@@ -105,13 +105,21 @@ final class AppRouter {
     // MARK: - Navigation Actions (Home Tab)
 
     /// Navigate to a report workspace
-    func navigateToReport(_ report: InspectionReport) {
-        homePath.append(Route.reportWorkspace(report))
+    func navigateToReport(_ report: InspectionReport, initialTab: WorkspaceTab = .overview) {
+        homePath.append(Route.reportWorkspace(report, initialTab: initialTab))
     }
 
     /// Navigate to report creation
-    func navigateToCreateReport() {
-        homePath.append(Route.createReport)
+    func navigateToCreateReport(targetTab: WorkspaceTab = .overview) {
+        homePath.append(Route.createReport(targetTab: targetTab))
+    }
+
+    /// Replace the current home route with a new route.
+    func replaceCurrentHomeRoute(with route: Route) {
+        if !homePath.isEmpty {
+            homePath.removeLast()
+        }
+        homePath.append(route)
     }
 
     /// Navigate to issue editor

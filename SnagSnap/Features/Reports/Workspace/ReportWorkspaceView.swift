@@ -16,10 +16,17 @@ struct ReportWorkspaceView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
     @State private var viewModel = ReportWorkspaceViewModel()
+    @State private var hasAppliedInitialTab = false
 
     // MARK: - Report
 
     let report: InspectionReport
+    private let initialTab: WorkspaceTab
+
+    init(report: InspectionReport, initialTab: WorkspaceTab = .overview) {
+        self.report = report
+        self.initialTab = initialTab
+    }
 
     // MARK: - Body
 
@@ -99,6 +106,12 @@ struct ReportWorkspaceView: View {
         }
         .sheet(isPresented: $viewModel.showAddAreaSheet) {
             AddEditAreaView(report: report)
+        }
+        .onAppear {
+            if !hasAppliedInitialTab {
+                viewModel.selectedTab = initialTab
+                hasAppliedInitialTab = true
+            }
         }
         .animateOnAppear(delay: 0.05, duration: 0.4)
     }

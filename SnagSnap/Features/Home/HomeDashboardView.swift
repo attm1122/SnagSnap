@@ -208,7 +208,7 @@ struct HomeDashboardView: View {
                 subtitle: "Add inspection photos"
             ) {
                 HapticService.shared.play(.light)
-                router.navigateToCreateReport()
+                router.navigateToCreateReport(targetTab: .issues)
             }
 
             HomeActionTile(
@@ -217,7 +217,7 @@ struct HomeDashboardView: View {
                 subtitle: "Areas, issues, notes"
             ) {
                 HapticService.shared.play(.light)
-                router.navigateToCreateReport()
+                router.navigateToCreateReport(targetTab: .areas)
             }
 
             HomeActionTile(
@@ -226,7 +226,7 @@ struct HomeDashboardView: View {
                 subtitle: "Generate polished PDFs"
             ) {
                 HapticService.shared.play(.light)
-                router.navigateToCreateReport()
+                router.navigateToCreateReport(targetTab: .report)
             }
         }
         .padding(.horizontal, Theme.spacingL)
