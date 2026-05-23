@@ -144,7 +144,7 @@ struct SSButton: View {
         switch style {
         case .fab: return 0
         case .tertiary: return Theme.spacingS
-        default: return Theme.spacingL
+        default: return Theme.spacingM
         }
     }
 
@@ -163,11 +163,11 @@ struct SSButton: View {
         case .primary:
             Theme.primary
         case .secondary:
-            Color.clear
+            Theme.blueSurface
         case .tertiary:
             Color.clear
         case .fab:
-            Theme.accent
+            Theme.ink
         case .destructive:
             Theme.error
         }
@@ -180,7 +180,7 @@ struct SSButton: View {
         case .secondary:
             Theme.primary
         case .tertiary:
-            Theme.secondaryAccent
+            Theme.primary
         }
     }
 
@@ -189,7 +189,7 @@ struct SSButton: View {
         switch style {
         case .secondary:
             RoundedRectangle(cornerRadius: Theme.cornerRadiusM, style: .continuous)
-                .stroke(Theme.primary.opacity(0.3), lineWidth: 1.5)
+                .stroke(Theme.primary.opacity(0.18), lineWidth: 1)
         default:
             EmptyView()
         }

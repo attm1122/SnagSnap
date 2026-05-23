@@ -36,48 +36,50 @@ struct ReportCardView: View {
 
     private var cardContent: some View {
         SSCard(
-            padding: Theme.spacingM,
-            cornerRadius: Theme.radiusMedium,
+            padding: Theme.spacingL,
+            cornerRadius: Theme.radiusLarge,
             shadowRadius: Theme.shadowRadiusSmall,
             shadowY: Theme.shadowYOffsetSmall
         ) {
-            VStack(alignment: .leading, spacing: Theme.spacingS) {
+            VStack(alignment: .leading, spacing: Theme.spacingM) {
                 // Title and issue count
-                HStack {
-                    Text(report.title)
-                        .font(Theme.fontHeadline)
-                        .foregroundStyle(Theme.label)
-                        .lineLimit(1)
+                HStack(alignment: .top, spacing: Theme.spacingM) {
+                    VStack(alignment: .leading, spacing: Theme.spacingXS) {
+                        Text(report.title)
+                            .font(Theme.fontHeadline.weight(.semibold))
+                            .foregroundStyle(Theme.ink)
+                            .lineLimit(2)
 
-                    Spacer()
+                        Text(report.reportType.displayName)
+                            .font(Theme.fontCaption.weight(.medium))
+                            .foregroundStyle(Theme.primary)
+                            .padding(.horizontal, Theme.spacingS)
+                            .padding(.vertical, 5)
+                            .background(Theme.blueSurface, in: Capsule())
+                    }
 
-                    IssueCountBadge(count: report.issueCount)
-                        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: report.issueCount)
+                    Spacer(minLength: Theme.spacingS)
+
+                    ReportStatusBadge(status: report.status)
                 }
 
                 // Property name and address
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: Theme.spacingXS) {
                     Text(report.propertyName)
-                        .font(Theme.fontSubheadline)
-                        .foregroundStyle(Theme.secondaryLabel)
+                        .font(Theme.fontSubheadline.weight(.medium))
+                        .foregroundStyle(Theme.ink)
                         .lineLimit(1)
 
                     Text(report.propertyAddress)
                         .font(Theme.fontFootnote)
-                        .foregroundStyle(Theme.tertiaryLabel)
-                        .lineLimit(1)
+                        .foregroundStyle(Theme.secondaryLabel)
+                        .lineLimit(2)
                 }
-
-                Divider()
 
                 // Bottom row: type badge, date, status
                 HStack(spacing: Theme.spacingS) {
-                    // Report type tag
-                    SSTag(
-                        report.reportType.displayName,
-                        variant: .info,
-                        icon: report.reportType.icon
-                    )
+                    IssueCountBadge(count: report.issueCount)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: report.issueCount)
 
                     Spacer()
 
@@ -100,8 +102,9 @@ struct ReportCardView: View {
                             .scaleEntryAnimation(delay: 0.1)
                     }
 
-                    // Status dot
-                    StatusDot(color: report.status.color, size: 8)
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Theme.tertiaryLabel)
                 }
             }
         }
@@ -115,17 +118,20 @@ private struct IssueCountBadge: View {
     let count: Int
 
     var body: some View {
-        ZStack {
-            Circle()
-                .fill(Theme.primaryLight)
-                .frame(width: 28, height: 28)
-
+        HStack(spacing: 6) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.caption2.weight(.semibold))
             Text("\(count)")
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
-                .foregroundStyle(Theme.primary)
+                .font(.caption.weight(.semibold))
                 .contentTransition(.numericText())
-                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: count)
+            Text(count == 1 ? "issue" : "issues")
+                .font(.caption.weight(.medium))
         }
+        .foregroundStyle(count > 0 ? Theme.secondaryAccent : Theme.secondaryLabel)
+        .padding(.horizontal, Theme.spacingS)
+        .padding(.vertical, 6)
+        .background((count > 0 ? Theme.secondaryAccent : Theme.secondaryLabel).opacity(0.1), in: Capsule())
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: count)
     }
 }
 

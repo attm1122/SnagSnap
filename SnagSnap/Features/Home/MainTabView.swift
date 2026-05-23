@@ -44,6 +44,9 @@ struct MainTabView: View {
             }
             .tag(AppRouter.Tab.settings)
         }
+        .tint(Theme.primary)
+        .toolbarBackground(Theme.cardBackground, for: .tabBar)
+        .toolbarBackground(.visible, for: .tabBar)
         .onChange(of: router.selectedTab) { _, _ in
             HapticService.shared.play(.selection)
         }

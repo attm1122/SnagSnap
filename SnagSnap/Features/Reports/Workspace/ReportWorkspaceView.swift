@@ -24,7 +24,7 @@ struct ReportWorkspaceView: View {
     // MARK: - Body
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: Theme.spacingM) {
             // Segmented tab picker
             Picker("Tab", selection: $viewModel.selectedTab) {
                 ForEach(WorkspaceTab.allCases) { tab in
@@ -33,8 +33,10 @@ struct ReportWorkspaceView: View {
                 }
             }
             .pickerStyle(.segmented)
-            .padding(.horizontal, Theme.spacingM)
-            .padding(.top, Theme.spacingS)
+            .padding(5)
+            .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusLarge, style: .continuous))
+            .padding(.horizontal, Theme.spacingL)
+            .padding(.top, Theme.spacingM)
             .onChange(of: viewModel.selectedTab) { _, _ in
                 HapticService.shared.play(.selection)
             }
@@ -60,9 +62,17 @@ struct ReportWorkspaceView: View {
             }
             .scrollIndicators(.hidden)
         }
-        .background(Theme.groupedBackground.ignoresSafeArea())
+        .background(
+            LinearGradient(
+                colors: [Theme.blueSurfaceStrong, Theme.background, Theme.background],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+        )
         .navigationTitle(report.title)
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(Theme.blueSurfaceStrong, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
@@ -80,7 +90,7 @@ struct ReportWorkspaceView: View {
                 } label: {
                     Image(systemName: "ellipsis.circle")
                         .font(.title3)
-                        .foregroundStyle(Theme.primary)
+                        .foregroundStyle(Theme.ink)
                 }
             }
         }
@@ -151,8 +161,12 @@ private struct EditReportSheet: View {
                         .frame(minHeight: 100)
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(Theme.background.ignoresSafeArea())
+            .tint(Theme.primary)
             .navigationTitle("Edit Report")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(Theme.background, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }

@@ -54,11 +54,11 @@ struct IssueCardView: View {
     private var cardContent: some View {
         SSCard(
             padding: Theme.spacingM,
-            cornerRadius: Theme.radiusMedium,
-            borderColor: borderColor.opacity(0.4),
+            cornerRadius: Theme.radiusLarge,
+            borderColor: Theme.separator.opacity(0.7),
             borderWidth: 1
         ) {
-            VStack(alignment: .leading, spacing: Theme.spacingS) {
+            VStack(alignment: .leading, spacing: Theme.spacingM) {
                 topRow
                 metadataRow
                 if let preview = notesPreview {
@@ -76,9 +76,9 @@ struct IssueCardView: View {
     // MARK: - Left Border
 
     private var leftBorder: some View {
-        RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous)
+        RoundedRectangle(cornerRadius: Theme.radiusLarge, style: .continuous)
             .fill(borderColor)
-            .frame(width: 4)
+            .frame(width: 3)
     }
 
     // MARK: - Top Row
@@ -88,12 +88,12 @@ struct IssueCardView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(issue.title)
                     .font(.headline.weight(.semibold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Theme.ink)
                     .lineLimit(2)
 
-                Text(areaName)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Label(areaName, systemImage: "mappin.and.ellipse")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(Theme.secondaryLabel)
             }
 
             Spacer()
@@ -121,7 +121,7 @@ struct IssueCardView: View {
             Spacer()
             Text(formattedDate(issue.createdAt))
                 .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Theme.tertiaryLabel)
         }
     }
 
@@ -147,7 +147,7 @@ struct IssueCardView: View {
                     .animation(.spring(response: 0.3, dampingFraction: 0.7), value: totalCount)
             }
         }
-        .foregroundStyle(.secondary)
+        .foregroundStyle(Theme.secondaryLabel)
     }
 
     // MARK: - Annotation Indicator
@@ -171,7 +171,7 @@ struct IssueCardView: View {
     private func notesPreviewView(_ preview: String) -> some View {
         Text(preview)
             .font(.caption)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Theme.secondaryLabel)
             .lineLimit(2)
             .padding(.top, 2)
     }
@@ -215,12 +215,12 @@ struct IssueCardView: View {
                 )
         } else {
             RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous)
-                .fill(Color.gray.opacity(0.15))
+                .fill(Theme.blueSurface)
                 .frame(width: 56, height: 56)
                 .overlay(
                     Image(systemName: "photo")
                         .font(.system(size: 20))
-                        .foregroundStyle(.secondary.opacity(0.5))
+                        .foregroundStyle(Theme.secondaryLabel.opacity(0.6))
                 )
         }
     }
@@ -262,12 +262,12 @@ struct IssueCardView: View {
     private func remainingCountBadge(_ count: Int) -> some View {
         ZStack {
             RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous)
-                .fill(Color.gray.opacity(0.15))
+                .fill(Theme.blueSurface)
                 .frame(width: 56, height: 56)
 
             Text("+\(count)")
                 .font(.caption2.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.secondaryLabel)
         }
     }
 

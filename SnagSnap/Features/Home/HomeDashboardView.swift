@@ -33,28 +33,36 @@ struct HomeDashboardView: View {
     // MARK: - Body
 
     var body: some View {
-        ScrollView {
-            LazyVStack(spacing: reports.isEmpty ? Theme.spacingXL : Theme.spacingL, pinnedViews: []) {
-                // MARK: Header
-                headerView
+        ZStack(alignment: .top) {
+            LinearGradient(
+                colors: [Theme.blueSurfaceStrong, Theme.background, Theme.background],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
 
-                // MARK: Stats Row
-                if !reports.isEmpty {
-                    StatsSummaryView(stats: viewModel.calculateStats(from: reports))
+            ScrollView {
+                LazyVStack(spacing: reports.isEmpty ? Theme.spacingXL : Theme.spacingL, pinnedViews: []) {
+                    // MARK: Header
+                    headerView
+
+                    // MARK: Stats Row
+                    if !reports.isEmpty {
+                        StatsSummaryView(stats: viewModel.calculateStats(from: reports))
+                    }
+
+                    // MARK: Primary CTA
+                    if !reports.isEmpty {
+                        newReportButton
+                    }
+
+                    // MARK: Recent Reports Section
+                    recentReportsSection
                 }
-
-                // MARK: Primary CTA
-                if !reports.isEmpty {
-                    newReportButton
-                }
-
-                // MARK: Recent Reports Section
-                recentReportsSection
+                .padding(.top, Theme.spacingXL)
+                .padding(.bottom, Theme.spacingXXL)
             }
-            .padding(.top, Theme.spacingXL)
-            .padding(.bottom, Theme.spacingXXL)
         }
-        .background(Theme.groupedBackground)
         .scrollContentBackground(.hidden)
         .refreshable {
             isRefreshing = true
@@ -81,36 +89,39 @@ struct HomeDashboardView: View {
 
     /// The app header with title and subtitle.
     private var headerView: some View {
-        HStack(alignment: .top, spacing: Theme.spacingM) {
+        VStack(alignment: .leading, spacing: Theme.spacingXL) {
+            topBar
+
             VStack(alignment: .leading, spacing: Theme.spacingXS) {
                 Text("SnagSnap")
-                    .font(.system(size: 34, weight: .bold, design: .rounded))
-                    .foregroundStyle(Theme.label)
-
-                Text("Property Reports")
-                    .font(Theme.fontTitle3)
+                    .font(.system(size: 24, weight: .bold))
                     .foregroundStyle(Theme.secondaryLabel)
-            }
 
-            Spacer(minLength: Theme.spacingM)
-
-            Button(action: {
-                HapticService.shared.play(.medium)
-                router.navigateToCreateReport()
-            }) {
-                Image(systemName: "plus")
-                    .font(.system(size: 22, weight: .semibold))
-                    .foregroundStyle(Theme.primary)
-                    .frame(width: 56, height: 56)
-                    .background(Theme.secondaryGroupedBackground)
-                    .clipShape(Circle())
-                    .shadow(color: Theme.shadowColor, radius: Theme.shadowRadiusLarge, x: 0, y: Theme.shadowYOffsetMedium)
+                Text(reports.isEmpty ? "Start a property report." : "What needs attention today?")
+                    .font(.system(size: 48, weight: .bold))
+                    .foregroundStyle(Theme.ink)
+                    .lineSpacing(-2)
+                    .minimumScaleFactor(0.76)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Create new report")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, Theme.spacingM)
+        .padding(.horizontal, Theme.spacingL)
+    }
+
+    private var topBar: some View {
+        HStack {
+            CircleIconButton(systemName: "questionmark.bubble", label: "Help") {
+                HapticService.shared.play(.light)
+            }
+
+            Spacer()
+
+            CircleIconButton(systemName: "plus", label: "Create new report") {
+                HapticService.shared.play(.medium)
+                router.navigateToCreateReport()
+            }
+        }
     }
 
     // MARK: - New Report Button
@@ -128,7 +139,7 @@ struct HomeDashboardView: View {
         }
         .buttonStyle(.animated(haptic: .medium))
         .accessibilityLabel("Create new report")
-        .padding(.horizontal, Theme.spacingM)
+        .padding(.horizontal, Theme.spacingL)
     }
 
     // MARK: - Recent Reports Section
@@ -137,11 +148,7 @@ struct HomeDashboardView: View {
     @ViewBuilder
     private var recentReportsSection: some View {
         if reports.isEmpty {
-            NoReportsEmptyState {
-                router.navigateToCreateReport()
-            }
-            .scaleEntryAnimation(delay: 0.1)
-            .padding(.top, Theme.spacingXL)
+            quickStartGrid
         } else {
             VStack(spacing: Theme.spacingS) {
                 // Section header
@@ -160,7 +167,7 @@ struct HomeDashboardView: View {
                         .foregroundStyle(Theme.primary)
                     }
                 }
-                .padding(.horizontal, Theme.spacingM)
+                .padding(.horizontal, Theme.spacingL)
 
                 // Search bar
                 searchBar
@@ -169,6 +176,51 @@ struct HomeDashboardView: View {
                 reportList
             }
         }
+    }
+
+    private var quickStartGrid: some View {
+        LazyVGrid(columns: [
+            GridItem(.flexible(), spacing: Theme.spacingM),
+            GridItem(.flexible(), spacing: Theme.spacingM)
+        ], spacing: Theme.spacingM) {
+            HomeActionTile(
+                icon: "doc.badge.plus",
+                title: "Create",
+                subtitle: "Start with property details"
+            ) {
+                HapticService.shared.play(.medium)
+                router.navigateToCreateReport()
+            }
+
+            HomeActionTile(
+                icon: "camera.viewfinder",
+                title: "Capture",
+                subtitle: "Add inspection photos"
+            ) {
+                HapticService.shared.play(.light)
+                router.navigateToCreateReport()
+            }
+
+            HomeActionTile(
+                icon: "square.grid.2x2",
+                title: "Organize",
+                subtitle: "Areas, issues, notes"
+            ) {
+                HapticService.shared.play(.light)
+                router.navigateToCreateReport()
+            }
+
+            HomeActionTile(
+                icon: "doc.richtext",
+                title: "Export",
+                subtitle: "Generate polished PDFs"
+            ) {
+                HapticService.shared.play(.light)
+                router.navigateToCreateReport()
+            }
+        }
+        .padding(.horizontal, Theme.spacingL)
+        .scaleEntryAnimation(delay: 0.1)
     }
 
     // MARK: - Search Bar
@@ -200,13 +252,13 @@ struct HomeDashboardView: View {
         .padding(.vertical, Theme.spacingS)
         .background(
             RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous)
-                .fill(Theme.secondaryGroupedBackground)
+                .fill(Theme.cardBackground)
         )
         .overlay(
             RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous)
                 .stroke(Theme.separator, lineWidth: 0.5)
         )
-        .padding(.horizontal, Theme.spacingM)
+        .padding(.horizontal, Theme.spacingL)
     }
 
     // MARK: - Report List
@@ -240,11 +292,71 @@ struct HomeDashboardView: View {
                         }
                     )
                     .accessibilityLabel("Report: \(report.title)")
-                    .padding(.horizontal, Theme.spacingM)
+                    .padding(.horizontal, Theme.spacingL)
                     .animateOnAppear(delay: 0.1 + Double(index) * 0.03, duration: 0.4)
                 }
             }
         }
+    }
+}
+
+private struct CircleIconButton: View {
+    let systemName: String
+    let label: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 21, weight: .medium))
+                .foregroundStyle(Theme.ink)
+                .frame(width: 58, height: 58)
+                .background(.white.opacity(0.82))
+                .clipShape(Circle())
+                .overlay(Circle().stroke(.white.opacity(0.9), lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+    }
+}
+
+private struct HomeActionTile: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: Theme.spacingL) {
+                Image(systemName: icon)
+                    .font(.system(size: 30, weight: .regular))
+                    .foregroundStyle(Theme.primary.opacity(0.42))
+                    .frame(width: 44, height: 44, alignment: .leading)
+
+                VStack(alignment: .leading, spacing: Theme.spacingXS) {
+                    Text(title)
+                        .font(.system(size: 25, weight: .bold))
+                        .foregroundStyle(Theme.ink)
+                        .lineLimit(1)
+
+                    Text(subtitle)
+                        .font(Theme.fontSubheadline)
+                        .foregroundStyle(Theme.secondaryLabel)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                }
+            }
+            .frame(maxWidth: .infinity, minHeight: 154, alignment: .leading)
+            .padding(Theme.spacingM)
+            .background(Theme.cardBackground)
+            .clipShape(RoundedRectangle(cornerRadius: Theme.radiusLarge, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.radiusLarge, style: .continuous)
+                    .stroke(.white.opacity(0.75), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.animated(haptic: .light))
     }
 }
 

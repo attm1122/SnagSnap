@@ -45,7 +45,8 @@ struct OverviewTabView: View {
             exportButton
                 .animateOnAppear(delay: 0.25)
         }
-        .padding(Theme.spacingM)
+        .padding(.horizontal, Theme.spacingL)
+        .padding(.vertical, Theme.spacingM)
     }
 
     // MARK: - Report Details Card
@@ -57,16 +58,16 @@ struct OverviewTabView: View {
                     VStack(alignment: .leading, spacing: Theme.spacingS) {
                         Text(report.title)
                             .font(.title3.weight(.bold))
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(Theme.ink)
                             .lineLimit(2)
 
                         Text(report.propertyName)
                             .font(.headline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Theme.mutedInk)
 
                         Text(report.propertyAddress)
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Theme.secondaryLabel)
                             .lineLimit(2)
                     }
 
@@ -145,10 +146,10 @@ struct OverviewTabView: View {
 
     private var statsGrid: some View {
         let stats: [(icon: String, iconColor: Color, keyPath: KeyPath<InspectionReport, Int>, label: String)] = [
-            ("square.grid.2x2", .blue, \.areaCount, "Areas"),
-            ("exclamationmark.triangle.fill", .orange, \.issueCount, "Total Issues"),
-            ("circle.fill", .red, \.openIssueCount, "Open Issues"),
-            ("checkmark.circle.fill", .green, \.fixedIssueCount, "Fixed Issues")
+            ("square.grid.2x2", Theme.primary, \.areaCount, "Areas"),
+            ("exclamationmark.triangle.fill", Theme.secondaryAccent, \.issueCount, "Total Issues"),
+            ("circle.fill", Theme.error, \.openIssueCount, "Open Issues"),
+            ("checkmark.circle.fill", Theme.accent, \.fixedIssueCount, "Fixed Issues")
         ]
 
         return LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: Theme.spacingM) {
@@ -261,7 +262,7 @@ struct OverviewTabView: View {
             }
             Text(value)
                 .font(.subheadline.weight(.medium))
-                .foregroundStyle(.primary)
+                .foregroundStyle(Theme.ink)
         }
     }
 
@@ -283,24 +284,23 @@ struct OverviewTabView: View {
     private func statCard(icon: String, iconColor: Color, value: String, label: String, delay: Double) -> some View {
         SSCard(padding: Theme.spacingM, cornerRadius: Theme.radiusMedium) {
             VStack(alignment: .leading, spacing: Theme.spacingS) {
-                HStack {
-                    Image(systemName: icon)
-                        .font(.title3)
-                        .foregroundStyle(iconColor)
-
-                    Spacer()
-                }
+                Image(systemName: icon)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(iconColor)
+                    .frame(width: 40, height: 40)
+                    .background(iconColor.opacity(0.1), in: Circle())
 
                 Text(value)
                     .font(.title2.weight(.bold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Theme.ink)
                     .contentTransition(.numericText())
                     .animation(.spring(response: 0.3, dampingFraction: 0.7), value: value)
 
                 Text(label)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.secondaryLabel)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .animateOnAppear(delay: delay, duration: 0.4)
     }

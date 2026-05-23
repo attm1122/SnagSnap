@@ -170,9 +170,10 @@ struct ReportTabView: View {
 
                 Spacer(minLength: Theme.spacingXXL)
             }
-            .padding(Theme.spacingM)
+            .padding(.horizontal, Theme.spacingL)
+            .padding(.vertical, Theme.spacingM)
         }
-        .background(Theme.groupedBackground.ignoresSafeArea())
+        .background(Theme.background.ignoresSafeArea())
     }
 
     // MARK: - Summary Card
@@ -181,14 +182,16 @@ struct ReportTabView: View {
         SSCard(padding: Theme.spacingL, cornerRadius: Theme.radiusLarge) {
             VStack(alignment: .leading, spacing: Theme.spacingM) {
                 HStack {
-                    Image(systemName: "doc.fill")
-                        .font(.title2)
+                    Image(systemName: "doc.text.fill")
+                        .font(.title2.weight(.semibold))
                         .foregroundStyle(Theme.primary)
+                        .frame(width: 46, height: 46)
+                        .background(Theme.blueSurface, in: Circle())
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Report Summary")
                             .font(.headline.weight(.semibold))
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(Theme.ink)
 
                         Text(report.summaryDescription)
                             .font(.subheadline)
@@ -227,14 +230,16 @@ struct ReportTabView: View {
         SSCard(padding: Theme.spacingL, cornerRadius: Theme.radiusLarge) {
             VStack(alignment: .leading, spacing: Theme.spacingM) {
                 HStack {
-                    Image(systemName: "doc.fill")
-                        .font(.title2)
-                        .foregroundStyle(Theme.success)
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(Theme.accent)
+                        .frame(width: 46, height: 46)
+                        .background(Theme.accent.opacity(0.1), in: Circle())
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("PDF Ready")
                             .font(.headline.weight(.semibold))
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(Theme.ink)
 
                         if let display = report.lastExportedDisplay {
                             Text("Exported \(display)")
@@ -352,7 +357,7 @@ struct ReportTabView: View {
             Spacer()
         }
         .padding(Theme.spacingM)
-        .background(Color.gray.opacity(0.08))
+        .background(Theme.blueSurface)
         .clipShape(RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous))
     }
 
@@ -395,10 +400,10 @@ struct ReportTabView: View {
         VStack(spacing: 4) {
             Text(value)
                 .font(.title3.weight(.bold))
-                .foregroundStyle(.primary)
+                .foregroundStyle(Theme.ink)
             Text(label)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.secondaryLabel)
         }
         .frame(maxWidth: .infinity)
     }

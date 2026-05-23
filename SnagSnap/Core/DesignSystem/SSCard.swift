@@ -21,7 +21,7 @@ struct SSCard<Content: View>: View {
     /// - Parameters:
     ///   - padding: Inset padding inside the card (default `16`).
     ///   - cornerRadius: Corner radius of the card (default `12`).
-    ///   - shadowRadius: Blur radius of the drop shadow (default `8`).
+    ///   - shadowRadius: Blur radius of the drop shadow (default `Theme.shadowRadius`).
     ///   - shadowColor: Color of the drop shadow (default `Theme.shadowColor`).
     ///   - shadowY: Vertical offset of the drop shadow (default `2`).
     ///   - background: Fill color behind the card content (default `Theme.cardBackground`).
@@ -35,7 +35,7 @@ struct SSCard<Content: View>: View {
         shadowColor: Color = Theme.shadowColor,
         shadowY: CGFloat = Theme.shadowY,
         background: Color = Theme.cardBackground,
-        borderColor: Color? = nil,
+        borderColor: Color? = Theme.separator.opacity(0.55),
         borderWidth: CGFloat = 1,
         @ViewBuilder content: () -> Content
     ) {

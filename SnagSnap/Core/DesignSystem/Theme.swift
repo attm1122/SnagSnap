@@ -4,21 +4,25 @@ import Foundation
 // MARK: - Design Tokens
 enum Theme {
     // MARK: Primary Colors
-    static let primary = Color(red: 0.12, green: 0.18, blue: 0.35)
-    static let primaryLight = Color(red: 0.12, green: 0.18, blue: 0.35).opacity(0.15)
-    static let accent = Color(red: 0.95, green: 0.58, blue: 0.13)
-    static let secondaryAccent = Color(red: 0.20, green: 0.40, blue: 0.75)
+    static let primary = Color(red: 0.03, green: 0.42, blue: 0.67)
+    static let primaryLight = Color(red: 0.03, green: 0.42, blue: 0.67).opacity(0.12)
+    static let accent = Color(red: 0.05, green: 0.58, blue: 0.78)
+    static let secondaryAccent = Color(red: 0.20, green: 0.33, blue: 0.63)
+    static let ink = Color(red: 0.04, green: 0.06, blue: 0.08)
+    static let mutedInk = Color(red: 0.45, green: 0.50, blue: 0.51)
+    static let blueSurface = Color(red: 0.91, green: 0.96, blue: 0.98)
+    static let blueSurfaceStrong = Color(red: 0.82, green: 0.92, blue: 0.96)
 
     // MARK: Background Colors
-    static let background = Color(.systemGroupedBackground)
-    static let secondaryBackground = Color(.secondarySystemGroupedBackground)
-    static let groupedBackground = Color(.systemGroupedBackground)
-    static let secondaryGroupedBackground = Color(.secondarySystemGroupedBackground)
-    static let cardBackground = Color(.secondarySystemGroupedBackground)
-    static let label = Color(.label)
-    static let secondaryLabel = Color(.secondaryLabel)
-    static let tertiaryLabel = Color(.tertiaryLabel)
-    static let separator = Color(.separator)
+    static let background = Color(red: 0.96, green: 0.98, blue: 0.99)
+    static let secondaryBackground = Color.white
+    static let groupedBackground = Color(red: 0.96, green: 0.98, blue: 0.99)
+    static let secondaryGroupedBackground = Color.white.opacity(0.92)
+    static let cardBackground = Color.white
+    static let label = ink
+    static let secondaryLabel = mutedInk
+    static let tertiaryLabel = Color(red: 0.63, green: 0.68, blue: 0.69)
+    static let separator = Color(red: 0.82, green: 0.88, blue: 0.91)
 
     // MARK: Semantic Colors
     static let success = Color(red: 0.20, green: 0.78, blue: 0.35)
@@ -46,10 +50,10 @@ enum Theme {
     static let issueStatusArchived = Color.gray
 
     // MARK: Typography (rounded fonts)
-    static let fontLargeTitle = Font.system(.largeTitle, design: .rounded, weight: .bold)
-    static let fontTitle = Font.system(.title, design: .rounded, weight: .semibold)
-    static let fontTitle2 = Font.system(.title2, design: .rounded, weight: .semibold)
-    static let fontTitle3 = Font.system(.title3, design: .rounded, weight: .medium)
+    static let fontLargeTitle = Font.system(.largeTitle, design: .default, weight: .bold)
+    static let fontTitle = Font.system(.title, design: .default, weight: .bold)
+    static let fontTitle2 = Font.system(.title2, design: .default, weight: .semibold)
+    static let fontTitle3 = Font.system(.title3, design: .default, weight: .semibold)
     static let fontHeadline = Font.system(.headline, design: .default, weight: .semibold)
     static let fontSubheadline = Font.system(.subheadline, design: .default, weight: .regular)
     static let fontBody = Font.system(.body, design: .default, weight: .regular)
@@ -79,7 +83,7 @@ enum Theme {
     static let iconSizeXL: CGFloat = 32
 
     // MARK: Button Height
-    static let buttonHeight: CGFloat = 50
+    static let buttonHeight: CGFloat = 48
 
     // MARK: Corner Radius Convenience Shorthands
     static let cornerRadiusS: CGFloat = radiusSmall
@@ -97,17 +101,17 @@ enum Theme {
 
     // MARK: Corner Radius
     static let radiusSmall: CGFloat = 6
-    static let radiusMedium: CGFloat = 10
-    static let radiusLarge: CGFloat = 16
-    static let radiusXL: CGFloat = 24
+    static let radiusMedium: CGFloat = 12
+    static let radiusLarge: CGFloat = 20
+    static let radiusXL: CGFloat = 28
 
     // MARK: Shadows
-    static let shadowColor = Color.black.opacity(0.1)
-    static let shadowRadiusSmall: CGFloat = 4
-    static let shadowRadiusMedium: CGFloat = 8
-    static let shadowRadiusLarge: CGFloat = 16
-    static let shadowYOffsetSmall: CGFloat = 2
-    static let shadowYOffsetMedium: CGFloat = 4
+    static let shadowColor = Color(red: 0.03, green: 0.20, blue: 0.31).opacity(0.08)
+    static let shadowRadiusSmall: CGFloat = 0
+    static let shadowRadiusMedium: CGFloat = 6
+    static let shadowRadiusLarge: CGFloat = 18
+    static let shadowYOffsetSmall: CGFloat = 0
+    static let shadowYOffsetMedium: CGFloat = 8
     static let shadowRadius: CGFloat = shadowRadiusMedium
     static let shadowY: CGFloat = shadowYOffsetSmall
     static let tertiaryBackground = Color(.tertiarySystemGroupedBackground)

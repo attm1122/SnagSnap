@@ -42,13 +42,13 @@ struct ReportStatusBadge: View {
     private var foregroundColor: Color {
         switch status {
         case .draft:
-            return Color.primary
+            return Theme.mutedInk
         case .ready:
-            return .blue
+            return Theme.primary
         case .exported:
-            return .green
+            return Theme.accent
         case .archived:
-            return .orange
+            return Theme.secondaryAccent
         }
     }
 
@@ -90,10 +90,10 @@ struct IssueStatusBadge: View {
 
     private var foregroundColor: Color {
         switch status {
-        case .open: return .red
-        case .inProgress: return .blue
-        case .fixed: return .green
-        case .notAnIssue, .archived: return .gray
+        case .open: return Theme.error
+        case .inProgress: return Theme.primary
+        case .fixed: return Theme.accent
+        case .notAnIssue, .archived: return Theme.mutedInk
         }
     }
 
@@ -147,9 +147,9 @@ struct SeverityIndicator: View {
         case .low:
             return Theme.secondaryLabel
         case .medium:
-            return .orange
+            return Theme.secondaryAccent
         case .high:
-            return .orange
+            return Theme.warning
         case .urgent:
             return Theme.error
         }
@@ -227,9 +227,9 @@ struct PriorityBadge: View {
 
     private var foregroundColor: Color {
         switch severity {
-        case .low: return .gray
-        case .medium: return .orange
-        case .high: return .orange
+        case .low: return Theme.mutedInk
+        case .medium: return Theme.secondaryAccent
+        case .high: return Theme.warning
         case .urgent: return Theme.error
         }
     }

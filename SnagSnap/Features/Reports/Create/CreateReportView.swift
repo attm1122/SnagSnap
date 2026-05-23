@@ -145,8 +145,19 @@ struct CreateReportView: View {
                 notesSection
                     .entryAnimation(delay: 0.2)
             }
+            .scrollContentBackground(.hidden)
+            .background(
+                LinearGradient(
+                    colors: [Theme.blueSurfaceStrong, Theme.background, Theme.background],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+            )
+            .tint(Theme.primary)
             .navigationTitle("New Report")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(Theme.blueSurfaceStrong, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
@@ -312,6 +323,7 @@ struct CreateReportView: View {
             Text("These fields are required to create a report.")
                 .font(.caption)
         }
+        .listRowBackground(Theme.cardBackground)
     }
 
     // MARK: - Report Type Section
@@ -338,6 +350,7 @@ struct CreateReportView: View {
             }
             .pickerStyle(.navigationLink)
         }
+        .listRowBackground(Theme.cardBackground)
     }
 
     // MARK: - Optional Fields Section
@@ -357,6 +370,7 @@ struct CreateReportView: View {
             .font(.body)
             .autocorrectionDisabled()
         }
+        .listRowBackground(Theme.cardBackground)
     }
 
     // MARK: - Notes Section
@@ -370,6 +384,7 @@ struct CreateReportView: View {
             .font(.body)
             .frame(minHeight: 100)
         }
+        .listRowBackground(Theme.cardBackground)
     }
 
     // MARK: - Helpers

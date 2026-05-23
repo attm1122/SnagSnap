@@ -16,27 +16,39 @@ struct SettingsView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: Theme.spacingL) {
+                settingsHero
+                    .entryAnimation(delay: 0.0)
+
                 // Profile Section
                 profileSection
-                    .entryAnimation(delay: 0.0)
+                    .entryAnimation(delay: 0.05)
 
                 // Subscription Section
                 subscriptionSection
-                    .entryAnimation(delay: 0.05)
+                    .entryAnimation(delay: 0.1)
 
                 // Default Settings Section
                 defaultSettingsSection
-                    .entryAnimation(delay: 0.1)
+                    .entryAnimation(delay: 0.15)
 
                 // About Section
                 aboutSection
-                    .entryAnimation(delay: 0.15)
+                    .entryAnimation(delay: 0.2)
             }
-            .padding(.horizontal, Theme.spacingM)
+            .padding(.horizontal, Theme.spacingL)
             .padding(.vertical, Theme.spacingL)
         }
-        .background(Theme.background.ignoresSafeArea())
+        .background(
+            LinearGradient(
+                colors: [Theme.blueSurfaceStrong, Theme.background, Theme.background],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+        )
         .navigationTitle("Settings")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(Theme.blueSurfaceStrong, for: .navigationBar)
         .dismissKeyboardOnDrag()
         .sheet(isPresented: $showPaywall) {
             PaywallView()
@@ -57,10 +69,28 @@ struct SettingsView: View {
         }
     }
 
+    // MARK: - Settings Hero
+
+    private var settingsHero: some View {
+        VStack(alignment: .leading, spacing: Theme.spacingS) {
+            Text("Workspace")
+                .font(Theme.fontCaption.weight(.semibold))
+                .foregroundStyle(Theme.primary)
+                .textCase(.uppercase)
+
+            Text("Tune your reports.")
+                .font(.system(size: 36, weight: .bold))
+                .foregroundStyle(Theme.ink)
+                .minimumScaleFactor(0.8)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, Theme.spacingM)
+    }
+
     // MARK: - Profile Section
 
     private var profileSection: some View {
-        SSCard {
+        SSCard(padding: Theme.spacingL, cornerRadius: Theme.radiusLarge) {
             VStack(alignment: .leading, spacing: Theme.spacingM) {
                 SettingsSectionHeader(title: "Your Profile", icon: "person.fill")
 
@@ -115,7 +145,7 @@ struct SettingsView: View {
     // MARK: - Subscription Section
 
     private var subscriptionSection: some View {
-        SSCard {
+        SSCard(padding: Theme.spacingL, cornerRadius: Theme.radiusLarge) {
             VStack(alignment: .leading, spacing: Theme.spacingM) {
                 SettingsSectionHeader(title: "Subscription", icon: "crown.fill")
 
@@ -167,7 +197,7 @@ struct SettingsView: View {
 
                                 Text("\(viewModel.remainingFreeReports)")
                                     .font(Theme.headline)
-                                    .foregroundStyle(viewModel.remainingFreeReports > 0 ? Theme.success : .red)
+                                    .foregroundStyle(viewModel.remainingFreeReports > 0 ? Theme.accent : Theme.error)
                             }
                         }
 
@@ -205,7 +235,7 @@ struct SettingsView: View {
     // MARK: - Default Settings Section
 
     private var defaultSettingsSection: some View {
-        SSCard {
+        SSCard(padding: Theme.spacingL, cornerRadius: Theme.radiusLarge) {
             VStack(alignment: .leading, spacing: Theme.spacingM) {
                 SettingsSectionHeader(title: "PDF Export Defaults", icon: "doc.text.fill")
 
@@ -249,7 +279,7 @@ struct SettingsView: View {
     // MARK: - About Section
 
     private var aboutSection: some View {
-        SSCard {
+        SSCard(padding: Theme.spacingL, cornerRadius: Theme.radiusLarge) {
             VStack(alignment: .leading, spacing: Theme.spacingM) {
                 SettingsSectionHeader(title: "About", icon: "info.circle.fill")
 
@@ -324,7 +354,7 @@ private struct SettingsTextField: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(Theme.callout)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.secondaryLabel)
 
             HStack(spacing: 10) {
                 Image(systemName: icon)
@@ -334,7 +364,7 @@ private struct SettingsTextField: View {
 
                 TextField(placeholder, text: $text)
                     .font(Theme.body)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Theme.ink)
                     .keyboardType(keyboardType)
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.words)
@@ -343,7 +373,7 @@ private struct SettingsTextField: View {
             .padding(.vertical, 10)
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(.systemGray6).opacity(0.5))
+                    .fill(Theme.blueSurface)
             )
         }
     }
@@ -367,11 +397,11 @@ private struct SettingsToggle: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(Theme.body)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Theme.ink)
 
                 Text(subtitle)
                     .font(Theme.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.secondaryLabel)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -403,13 +433,13 @@ private struct SettingsNavigationRow: View {
 
                 Text(title)
                     .font(Theme.body)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Theme.ink)
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(Theme.tertiaryLabel)
             }
             .padding(.vertical, 10)
         }
@@ -426,12 +456,14 @@ private struct SettingsSectionHeader: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: icon)
-                .font(.system(size: 18, weight: .semibold))
+                .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(Theme.primary)
+                .frame(width: 34, height: 34)
+                .background(Theme.blueSurface, in: Circle())
 
             Text(title)
                 .font(Theme.headline)
-                .foregroundStyle(.primary)
+                .foregroundStyle(Theme.ink)
 
             Spacer()
         }

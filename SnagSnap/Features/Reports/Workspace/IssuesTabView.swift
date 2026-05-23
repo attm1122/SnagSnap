@@ -66,8 +66,8 @@ struct IssuesTabView: View {
                 .foregroundStyle(Theme.primary)
                 .padding(.horizontal, Theme.spacingM)
                 .padding(.vertical, Theme.spacingS)
-                .background(Theme.primary.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous))
+                .background(Theme.blueSurface)
+                .clipShape(Capsule())
             }
             .buttonStyle(.animated(haptic: .light))
 
@@ -85,11 +85,11 @@ struct IssuesTabView: View {
                     Text(viewModel.issueSort.rawValue)
                         .font(.subheadline.weight(.medium))
                 }
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.ink)
                 .padding(.horizontal, Theme.spacingM)
                 .padding(.vertical, Theme.spacingS)
-                .background(Color.gray.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous))
+                .background(Theme.cardBackground)
+                .clipShape(Capsule())
             }
             .buttonStyle(.animated(haptic: .light))
 
@@ -103,9 +103,11 @@ struct IssuesTabView: View {
                     viewModel.showAddAreaSheet = true
                 }
             } label: {
-                Image(systemName: "plus.circle.fill")
-                    .font(.title3)
-                    .foregroundStyle(Theme.primary)
+                Image(systemName: "plus")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 38, height: 38)
+                    .background(Theme.ink, in: Circle())
             }
             .buttonStyle(.animated(haptic: .medium))
 
@@ -113,7 +115,7 @@ struct IssuesTabView: View {
             let issues = viewModel.sortedAndFilteredIssues(from: report)
             Text("\(issues.count) issue\(issues.count == 1 ? "" : "s")")
                 .font(.caption.weight(.medium))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.secondaryLabel)
                 .contentTransition(.numericText())
                 .animation(.spring(response: 0.3, dampingFraction: 0.7), value: issues.count)
         }

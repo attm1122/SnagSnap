@@ -36,7 +36,8 @@ struct AreasTabView: View {
                 emptyState
             }
         }
-        .padding(Theme.spacingM)
+        .padding(.horizontal, Theme.spacingL)
+        .padding(.vertical, Theme.spacingM)
         .sheet(isPresented: $viewModel.showAddAreaSheet) {
             AddEditAreaView(report: report)
         }
@@ -54,7 +55,7 @@ struct AreasTabView: View {
         SSButton(
             "Add Area",
             style: .secondary,
-            icon: "plus",
+            icon: "plus.circle.fill",
             isFullWidth: true
         ) {
             viewModel.showAddAreaSheet = true
@@ -149,23 +150,19 @@ private struct AreaRow: View {
     @State private var isVisible = false
 
     var body: some View {
-        SSCard(padding: Theme.spacingM, cornerRadius: Theme.radiusMedium) {
+        SSCard(padding: Theme.spacingM, cornerRadius: Theme.radiusLarge) {
             HStack(spacing: Theme.spacingM) {
                 // Area icon
-                ZStack {
-                    RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous)
-                        .fill(Theme.primary.opacity(0.1))
-                        .frame(width: 48, height: 48)
-
-                    Image(systemName: "square.grid.2x2")
-                        .font(.title3)
-                        .foregroundStyle(Theme.primary)
-                }
+                Image(systemName: "square.grid.2x2")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Theme.primary)
+                    .frame(width: 48, height: 48)
+                    .background(Theme.blueSurface, in: RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(area.name)
                         .font(.headline.weight(.semibold))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(Theme.ink)
 
                     if let notes = area.notes, !notes.isEmpty {
                         Text(notes)
@@ -209,11 +206,11 @@ private struct AreaRow: View {
                 .contentTransition(.numericText())
                 .animation(.spring(response: 0.3, dampingFraction: 0.7), value: count)
         }
-        .foregroundStyle(count > 0 ? Theme.warning : .secondary)
+        .foregroundStyle(count > 0 ? Theme.secondaryAccent : Theme.secondaryLabel)
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .background(
-            (count > 0 ? Theme.warning : Color.gray).opacity(0.1)
+            (count > 0 ? Theme.secondaryAccent : Theme.mutedInk).opacity(0.1)
         )
         .clipShape(Capsule())
     }
@@ -227,10 +224,10 @@ private struct AreaRow: View {
                 .contentTransition(.numericText())
                 .animation(.spring(response: 0.3, dampingFraction: 0.7), value: count)
         }
-        .foregroundStyle(.secondary)
+        .foregroundStyle(Theme.secondaryLabel)
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
-        .background(Color.gray.opacity(0.1))
+        .background(Theme.blueSurface)
         .clipShape(Capsule())
     }
 }

@@ -22,32 +22,27 @@ private struct StatCard: View {
             cornerRadius: Theme.radiusLarge,
             shadowRadius: Theme.shadowRadiusSmall,
             shadowY: Theme.shadowYOffsetSmall,
-            borderColor: iconColor.opacity(0.3)
+            borderColor: Theme.separator.opacity(0.65)
         ) {
-            VStack(spacing: Theme.spacingS) {
-                HStack {
-                    Image(systemName: icon)
-                        .font(.system(size: 22, weight: .semibold))
-                        .foregroundStyle(iconColor)
-                    Spacer()
-                }
+            VStack(alignment: .leading, spacing: Theme.spacingM) {
+                Image(systemName: icon)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(iconColor)
+                    .frame(width: 38, height: 38)
+                    .background(iconColor.opacity(0.11), in: Circle())
 
-                HStack {
-                    Text("\(value)")
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
-                        .foregroundStyle(Theme.label)
-                    Spacer()
-                }
+                Text("\(value)")
+                    .font(.system(size: 32, weight: .bold))
+                    .foregroundStyle(Theme.ink)
+                    .contentTransition(.numericText())
 
-                HStack {
-                    Text(label)
-                        .font(Theme.fontCaption)
-                        .foregroundStyle(Theme.secondaryLabel)
-                    Spacer()
-                }
+                Text(label)
+                    .font(Theme.fontCaption.weight(.medium))
+                    .foregroundStyle(Theme.secondaryLabel)
+                    .lineLimit(1)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(width: 120)
     }
 }
 
@@ -61,34 +56,32 @@ struct StatsSummaryView: View {
     let stats: DashboardStats
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: Theme.spacingM) {
-                StatCard(
-                    icon: "doc.fill",
-                    iconColor: Theme.primary,
-                    value: stats.totalReports,
-                    label: "Reports"
-                )
-                .entryAnimation(delay: 0.0)
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: Theme.spacingS) {
+            StatCard(
+                icon: "doc.text.fill",
+                iconColor: Theme.primary,
+                value: stats.totalReports,
+                label: "Reports"
+            )
+            .entryAnimation(delay: 0.0)
 
-                StatCard(
-                    icon: "exclamationmark.triangle.fill",
-                    iconColor: Theme.warning,
-                    value: stats.openIssues,
-                    label: "Open Issues"
-                )
-                .entryAnimation(delay: 0.05)
+            StatCard(
+                icon: "exclamationmark.triangle.fill",
+                iconColor: Theme.secondaryAccent,
+                value: stats.openIssues,
+                label: "Open"
+            )
+            .entryAnimation(delay: 0.05)
 
-                StatCard(
-                    icon: "checkmark.circle.fill",
-                    iconColor: Theme.success,
-                    value: stats.completedCount,
-                    label: "Completed"
-                )
-                .entryAnimation(delay: 0.1)
-            }
-            .padding(.horizontal, Theme.spacingM)
+            StatCard(
+                icon: "checkmark.seal.fill",
+                iconColor: Theme.accent,
+                value: stats.completedCount,
+                label: "Done"
+            )
+            .entryAnimation(delay: 0.1)
         }
+        .padding(.horizontal, Theme.spacingL)
     }
 }
 
