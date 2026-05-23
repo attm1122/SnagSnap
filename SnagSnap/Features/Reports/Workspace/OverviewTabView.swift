@@ -130,6 +130,7 @@ struct OverviewTabView: View {
                                 Image(systemName: "note.text")
                                     .foregroundStyle(Theme.primary)
                                     .frame(width: 20)
+                                    .accessibilityHidden(true)
                                 Text("Notes")
                                     .font(.subheadline.weight(.medium))
                                     .foregroundStyle(.secondary)
@@ -214,6 +215,7 @@ struct OverviewTabView: View {
                     Circle()
                         .fill(item.severity.color)
                         .frame(width: 10, height: 10)
+                        .accessibilityHidden(true)
 
                     Text(item.severity.displayName)
                         .font(.subheadline)
@@ -266,6 +268,7 @@ struct OverviewTabView: View {
                         .foregroundStyle(Theme.primary)
                         .frame(width: 44, height: 44)
                         .background(Theme.blueSurface, in: RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous))
+                        .accessibilityHidden(true)
 
                     VStack(alignment: .leading, spacing: Theme.spacingXS) {
                         Text(next.title)
@@ -336,6 +339,7 @@ struct OverviewTabView: View {
                 Image(systemName: icon)
                     .font(.caption)
                     .foregroundStyle(Theme.primary)
+                    .accessibilityHidden(true)
                 Text(label)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -351,6 +355,7 @@ struct OverviewTabView: View {
             Image(systemName: icon)
                 .foregroundStyle(Theme.primary)
                 .frame(width: 20)
+                .accessibilityHidden(true)
             Text(label)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
@@ -369,6 +374,7 @@ struct OverviewTabView: View {
                     .foregroundStyle(iconColor)
                     .frame(width: 40, height: 40)
                     .background(iconColor.opacity(0.1), in: Circle())
+                    .accessibilityHidden(true)
 
                 Text(value)
                     .font(.title2.weight(.bold))
@@ -382,6 +388,8 @@ struct OverviewTabView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(label): \(value)")
         .animateOnAppear(delay: delay, duration: 0.4)
     }
 }

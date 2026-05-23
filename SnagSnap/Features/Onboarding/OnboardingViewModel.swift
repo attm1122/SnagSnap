@@ -75,14 +75,14 @@ final class OnboardingViewModel {
         !selectedUseCases.isEmpty
     }
 
-    /// Whether the user can proceed from the use case selection screen.
+    /// Use-case selection is optional; it tunes defaults but should not block activation.
     var canContinueFromUseCases: Bool {
-        hasSelectedUseCase
+        true
     }
 
-    /// Whether all required fields are filled to complete onboarding.
+    /// Branding details are optional and can be completed later in Settings.
     var canCompleteOnboarding: Bool {
-        isNameValid
+        true
     }
 
     /// The selected use cases as a comma-separated string for AppStorage persistence.
@@ -144,20 +144,23 @@ final class OnboardingViewModel {
         // Persist selected use cases as comma-separated string
         UserDefaults.standard.set(selectedUseCaseString, forKey: "selectedUseCase")
 
-        // Create and persist the user profile
-        let profile = UserProfile(
-            companyName: companyName.trimmingCharacters(in: .whitespacesAndNewlines),
-            inspectorName: inspectorName.trimmingCharacters(in: .whitespacesAndNewlines),
-            phone: phone.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                ? nil
-                : phone.trimmingCharacters(in: .whitespacesAndNewlines),
-            email: email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                ? nil
-                : email.trimmingCharacters(in: .whitespacesAndNewlines)
-        )
+        let trimmedCompanyName = companyName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedInspectorName = inspectorName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedPhone = phone.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        context.insert(profile)
-        try? context.save()
+        // Create a profile only when the user supplied branding details.
+        if !trimmedCompanyName.isEmpty || !trimmedInspectorName.isEmpty || !trimmedPhone.isEmpty || !trimmedEmail.isEmpty {
+            let profile = UserProfile(
+                companyName: trimmedCompanyName,
+                inspectorName: trimmedInspectorName,
+                phone: trimmedPhone.isEmpty ? nil : trimmedPhone,
+                email: trimmedEmail.isEmpty ? nil : trimmedEmail
+            )
+
+            context.insert(profile)
+            try? context.save()
+        }
 
         // Mark onboarding as completed — triggers root view to switch to MainTabView
         UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")

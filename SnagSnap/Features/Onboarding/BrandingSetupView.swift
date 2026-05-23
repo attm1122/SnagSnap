@@ -110,13 +110,11 @@ struct BrandingSetupView: View {
 
                 Spacer()
 
-                // Bottom action area
                 VStack(spacing: Theme.spacingL) {
                     SSButton(
-                        "Start First Report",
+                        "Finish Setup",
                         style: .primary,
                         icon: "checkmark",
-                        isDisabled: !viewModel.canCompleteOnboarding,
                         isFullWidth: true,
                         action: {
                             HapticService.shared.play(.success)
@@ -125,7 +123,7 @@ struct BrandingSetupView: View {
                         }
                     )
                     .buttonStyle(.animated(haptic: .medium))
-                    .accessibilityLabel("Start first report")
+                    .accessibilityLabel("Finish setup")
 
                     // Page indicator
                     HStack(spacing: Theme.spacingS) {

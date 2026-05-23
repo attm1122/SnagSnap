@@ -334,11 +334,14 @@ struct HomeDashboardView: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 17, weight: .medium))
                 .foregroundStyle(Theme.tertiaryLabel)
+                .accessibilityHidden(true)
 
             TextField("Search by title, property, or address...", text: $viewModel.searchText)
                 .font(Theme.fontBody)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
+                .accessibilityLabel("Search reports")
+                .accessibilityValue(viewModel.searchText.isEmpty ? "Search by title, property, or address" : viewModel.searchText)
 
             if !viewModel.searchText.isEmpty {
                 Button(action: { viewModel.searchText = "" }) {
@@ -347,6 +350,7 @@ struct HomeDashboardView: View {
                         .foregroundStyle(Theme.tertiaryLabel)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Clear search")
                 .transition(.opacity)
             }
         }
@@ -435,6 +439,7 @@ private struct HomeActionTile: View {
                     .font(.system(size: 24, weight: .medium))
                     .foregroundStyle(Theme.primary.opacity(0.64))
                     .frame(width: 38, height: 38, alignment: .leading)
+                    .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: Theme.spacingXS) {
                     Text(title)
@@ -459,6 +464,7 @@ private struct HomeActionTile: View {
             )
         }
         .buttonStyle(.animated(haptic: .light))
+        .accessibilityLabel("\(title), \(subtitle)")
     }
 }
 

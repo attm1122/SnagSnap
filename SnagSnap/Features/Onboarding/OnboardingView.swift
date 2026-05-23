@@ -41,7 +41,7 @@ struct OnboardingView: View {
             WelcomeView(
                 viewModel: viewModel,
                 onGetStarted: { viewModel.nextPage() },
-                onSkip: { viewModel.skip() }
+                onSkip: completeOnboarding
             )
             .tag(0)
 
@@ -49,7 +49,7 @@ struct OnboardingView: View {
             UseCaseSelectionView(
                 viewModel: viewModel,
                 onContinue: { viewModel.nextPage() },
-                onSkip: { viewModel.skip() }
+                onSkip: completeOnboarding
             )
             .tag(1)
 
@@ -57,11 +57,7 @@ struct OnboardingView: View {
             BrandingSetupView(
                 viewModel: viewModel,
                 onComplete: { hasCompletedOnboarding = true },
-                onSkip: {
-                    // Even when skipping branding, we mark onboarding complete
-                    // with a default empty profile
-                    viewModel.skip()
-                }
+                onSkip: completeOnboarding
             )
             .tag(2)
         }
@@ -71,6 +67,13 @@ struct OnboardingView: View {
             // Ensure we start fresh on page 0
             viewModel.currentPage = 0
         }
+    }
+
+    private func completeOnboarding() {
+        selectedUseCase = viewModel.selectedUseCaseString
+        UserDefaults.standard.set(selectedUseCase, forKey: "selectedUseCase")
+        UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
+        hasCompletedOnboarding = true
     }
 }
 

@@ -10,8 +10,7 @@ import SwiftUI
 /// The second onboarding screen where the user selects their intended use cases.
 ///
 /// Presents a scrollable grid of selectable cards, each with an SF Symbol icon
-/// and label. Multiple selections are allowed. A continue button at the bottom
-/// is enabled once at least one option is selected.
+/// and label. Multiple selections are allowed, but optional.
 struct UseCaseSelectionView: View {
 
     // MARK: - Properties
@@ -58,7 +57,7 @@ struct UseCaseSelectionView: View {
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, Theme.spacingL)
 
-                    Text("Select all that apply")
+                    Text("Pick any that fit, or continue without choosing")
                         .font(Theme.fontCallout)
                         .foregroundStyle(Theme.secondaryLabel)
                 }
@@ -95,7 +94,6 @@ struct UseCaseSelectionView: View {
                         "Continue",
                         style: .primary,
                         icon: "arrow.right",
-                        isDisabled: !viewModel.canContinueFromUseCases,
                         isFullWidth: true,
                         action: onContinue
                     )

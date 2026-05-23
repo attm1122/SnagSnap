@@ -3,6 +3,12 @@ import SwiftData
 @testable import SnagSnap
 
 final class JourneyCompletionTests: XCTestCase {
+    override func tearDown() {
+        UserDefaults.standard.removeObject(forKey: "hasCompletedOnboarding")
+        UserDefaults.standard.removeObject(forKey: "selectedUseCase")
+        super.tearDown()
+    }
+
     func testCreateReportDraftTrimsValuesAndBuildsReport() throws {
         var draft = CreateReportDraft()
         draft.title = "  Final Inspection  "
@@ -34,6 +40,37 @@ final class JourneyCompletionTests: XCTestCase {
         XCTAssertFalse(draft.validate())
         XCTAssertTrue(draft.showValidationErrors)
         XCTAssertNil(draft.makeReport())
+    }
+
+    func testOnboardingCanCompleteWithoutOptionalBrandingProfile() throws {
+        let context = try makeContext()
+        let viewModel = OnboardingViewModel()
+
+        XCTAssertTrue(viewModel.canContinueFromUseCases)
+        XCTAssertTrue(viewModel.canCompleteOnboarding)
+
+        viewModel.completeOnboarding(context: context)
+
+        let profiles = try context.fetch(FetchDescriptor<UserProfile>())
+        XCTAssertTrue(profiles.isEmpty)
+        XCTAssertTrue(UserDefaults.standard.bool(forKey: "hasCompletedOnboarding"))
+    }
+
+    func testOnboardingPersistsTrimmedBrandingWhenProvided() throws {
+        let context = try makeContext()
+        let viewModel = OnboardingViewModel()
+        viewModel.companyName = "  Premier Property  "
+        viewModel.inspectorName = "  Jane Inspector  "
+        viewModel.phone = "  +44 7700 900123  "
+        viewModel.email = "  jane@example.com  "
+
+        viewModel.completeOnboarding(context: context)
+
+        let profile = try XCTUnwrap(try context.fetch(FetchDescriptor<UserProfile>()).first)
+        XCTAssertEqual(profile.companyName, "Premier Property")
+        XCTAssertEqual(profile.inspectorName, "Jane Inspector")
+        XCTAssertEqual(profile.phone, "+44 7700 900123")
+        XCTAssertEqual(profile.email, "jane@example.com")
     }
 
     func testOrganizeJourneyAreaSavePersistsAndCompletes() throws {

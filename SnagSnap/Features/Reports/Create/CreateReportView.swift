@@ -130,14 +130,6 @@ struct CreateReportView: View {
         .toolbarBackground(Theme.blueSurfaceStrong, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
         .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Cancel") {
-                    dismiss()
-                }
-                .buttonStyle(.animated(haptic: .light))
-                .foregroundStyle(Theme.primary)
-            }
-
             ToolbarItem(placement: .confirmationAction) {
                 Button("Create") {
                     createReport()
@@ -275,6 +267,7 @@ struct CreateReportView: View {
                     .foregroundStyle(Theme.primary)
                     .frame(width: 40, height: 40)
                     .background(Theme.primaryLight, in: RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous))
+                    .accessibilityHidden(true)
 
                 Picker("Type", selection: $draft.reportType.animation(.spring(response: 0.3, dampingFraction: 0.7))) {
                     ForEach(ReportType.allCases) { type in
@@ -335,6 +328,8 @@ struct CreateReportView: View {
                 .foregroundStyle(Theme.ink)
                 .scrollContentBackground(.hidden)
                 .frame(minHeight: 132)
+                .accessibilityLabel("General Notes")
+                .accessibilityValue(draft.generalNotes.isEmpty ? "Add context, access notes, or inspection scope." : draft.generalNotes)
             }
             .padding(.horizontal, Theme.spacingM - 5)
             .padding(.vertical, Theme.spacingS)
@@ -473,6 +468,8 @@ private struct RequiredTextInput: View {
             .font(Theme.body)
             .foregroundStyle(Theme.ink)
             .tint(Theme.primary)
+            .accessibilityLabel(title)
+            .accessibilityValue(text.isEmpty ? placeholder : text)
             .autocorrectionDisabled()
             .textInputAutocapitalization(.words)
             .padding(.horizontal, Theme.spacingM)
