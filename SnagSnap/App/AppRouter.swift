@@ -135,6 +135,27 @@ final class AppRouter {
         homePath = path
     }
 
+    /// Complete report creation and open the resulting workspace.
+    ///
+    /// SwiftUI can assert if the currently rendered navigation destination is
+    /// replaced in-place during the same update cycle that created the report.
+    /// Close the creation route first, then push the workspace on the next
+    /// main run loop so the navigation stack observes two stable transitions.
+    func completeCreateReport(
+        _ report: InspectionReport,
+        targetTab: WorkspaceTab = .overview,
+        launchAction: WorkspaceLaunchAction = .none
+    ) {
+        selectedTab = .home
+        homePath = []
+
+        DispatchQueue.main.async { [weak self] in
+            self?.appendToHomePath(
+                .reportWorkspace(report, initialTab: targetTab, launchAction: launchAction)
+            )
+        }
+    }
+
     /// Navigate to issue editor
     func navigateToIssueEditor(issue: InspectionIssue?, area: InspectionArea?, report: InspectionReport) {
         appendToHomePath(Route.issueEditor(issue: issue, area: area, report: report))

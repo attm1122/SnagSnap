@@ -62,8 +62,10 @@ struct MainTabView: View {
             CreateReportView(
                 modelContext: modelContext,
                 onComplete: { report in
-                    router.replaceCurrentHomeRoute(
-                        with: .reportWorkspace(report, initialTab: targetTab, launchAction: launchAction)
+                    router.completeCreateReport(
+                        report,
+                        targetTab: targetTab,
+                        launchAction: launchAction
                     )
                 }
             )

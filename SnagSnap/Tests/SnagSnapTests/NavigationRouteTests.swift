@@ -45,7 +45,7 @@ final class NavigationRouteTests: XCTestCase {
         XCTAssertEqual(router.homePath.count, 1)
     }
 
-    func testReplaceCurrentHomeRouteKeepsSingleVisibleDestination() {
+    func testCompleteCreateReportTransitionsThroughRootBeforeWorkspace() {
         let router = AppRouter.shared
         router.resetToRoot()
         let report = InspectionReport(
@@ -55,8 +55,35 @@ final class NavigationRouteTests: XCTestCase {
         )
 
         router.navigateToCreateReport()
-        router.replaceCurrentHomeRoute(with: .reportWorkspace(report))
+        router.completeCreateReport(report)
 
+        XCTAssertTrue(router.homePath.isEmpty)
+    }
+
+    func testCompleteCreateReportPushesWorkspaceOnNextRunLoop() {
+        let router = AppRouter.shared
+        router.resetToRoot()
+        let report = InspectionReport(
+            title: "Draft Property Report",
+            propertyName: "New Property",
+            propertyAddress: "Address to add"
+        )
+        let expectation = expectation(description: "Workspace route is pushed")
+
+        router.navigateToCreateReport()
+        router.completeCreateReport(report, targetTab: .areas, launchAction: .addArea)
+
+        DispatchQueue.main.async {
+            expectation.fulfill()
+        }
+
+        wait(for: [expectation], timeout: 1.0)
         XCTAssertEqual(router.homePath.count, 1)
+        guard case .reportWorkspace(let reportID, let initialTab, let launchAction) = router.homePath.first else {
+            return XCTFail("Expected report workspace route")
+        }
+        XCTAssertEqual(reportID, report.id)
+        XCTAssertEqual(initialTab, .areas)
+        XCTAssertEqual(launchAction, .addArea)
     }
 }
