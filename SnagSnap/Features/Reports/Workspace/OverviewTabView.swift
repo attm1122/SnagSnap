@@ -242,7 +242,12 @@ struct OverviewTabView: View {
             icon: "square.and.arrow.up",
             isFullWidth: true
         ) {
-            viewModel.generatePDF(for: report, modelContext: modelContext)
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                viewModel.selectedTab = .report
+            }
+            DispatchQueue.main.async {
+                viewModel.generatePDF(for: report, modelContext: modelContext)
+            }
         }
         .buttonStyle(.animated(haptic: .medium))
         .padding(.top, Theme.spacingS)

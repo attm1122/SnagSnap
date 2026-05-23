@@ -103,11 +103,12 @@ final class CreateEditIssueViewModel {
     // MARK: - Actions
 
     /// Saves the issue, either creating a new one or updating the existing one.
-    func save() {
+    @discardableResult
+    func save() -> Bool {
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedTitle.isEmpty, let selectedAreaID = selectedAreaID else {
             showValidationError = true
-            return
+            return false
         }
 
         isSaving = true
@@ -119,7 +120,7 @@ final class CreateEditIssueViewModel {
         )
         guard let targetArea = (try? modelContext.fetch(descriptor))?.first else {
             showValidationError = true
-            return
+            return false
         }
 
         if let issue = issue {
@@ -155,9 +156,11 @@ final class CreateEditIssueViewModel {
         do {
             try modelContext.save()
             onComplete()
+            return true
         } catch {
             print("Failed to save issue: \(error.localizedDescription)")
             showValidationError = true
+            return false
         }
     }
 
@@ -344,17 +347,24 @@ struct CreateEditIssueView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         viewModel?.cancel()
-                        dismiss()
+                        if onComplete == nil {
+                            dismiss()
+                        }
                     }
                     .foregroundStyle(Theme.primary)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        HapticService.shared.play(.success)
-                        toastMessage = "Issue saved"
-                        showToast = true
-                        viewModel?.save()
-                        dismiss()
+                        if viewModel?.save() == true {
+                            HapticService.shared.play(.success)
+                            toastMessage = "Issue saved"
+                            showToast = true
+                            if onComplete == nil {
+                                dismiss()
+                            }
+                        } else {
+                            HapticService.shared.play(.warning)
+                        }
                     }
                     .buttonStyle(.animated(haptic: .medium))
                     .disabled(!(viewModel?.canSave ?? false))

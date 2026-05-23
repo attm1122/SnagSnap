@@ -128,8 +128,23 @@ struct ReportWorkspaceView: View {
     // MARK: - Actions
 
     private func shareReport() {
-        viewModel.generatePDF(for: report, modelContext: modelContext)
-        viewModel.prepareShare()
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+            viewModel.selectedTab = .report
+        }
+
+        if report.hasExportedPDF {
+            if viewModel.canShareWithoutRegenerating(report: report) {
+                viewModel.shareLatestPDF(for: report)
+            } else {
+                DispatchQueue.main.async {
+                    viewModel.showSharePrompt = true
+                }
+            }
+        } else {
+            DispatchQueue.main.async {
+                viewModel.generatePDF(for: report, modelContext: modelContext)
+            }
+        }
     }
 
     private var parentAddAreaSheetBinding: Binding<Bool> {

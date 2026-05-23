@@ -65,11 +65,12 @@ final class AddEditAreaViewModel {
     }
 
     /// Saves the area, either creating a new one or updating the existing one.
-    func save() {
+    @discardableResult
+    func save() -> Bool {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else {
             showValidationError = true
-            return
+            return false
         }
 
         if let area = area {
@@ -93,9 +94,11 @@ final class AddEditAreaViewModel {
         do {
             try modelContext.save()
             onComplete()
+            return true
         } catch {
             print("Failed to save area: \(error.localizedDescription)")
             showValidationError = true
+            return false
         }
     }
 
@@ -151,11 +154,14 @@ struct AddEditAreaView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        HapticService.shared.play(.success)
-                        toastMessage = "Area saved"
-                        showToast = true
-                        viewModel?.save()
-                        dismiss()
+                        if viewModel?.save() == true {
+                            HapticService.shared.play(.success)
+                            toastMessage = "Area saved"
+                            showToast = true
+                            dismiss()
+                        } else {
+                            HapticService.shared.play(.warning)
+                        }
                     }
                     .buttonStyle(.animated(haptic: .medium))
                     .disabled(!(viewModel?.canSave ?? false))
