@@ -78,6 +78,15 @@ final class ShareService {
     ///   - url: The file URL of the PDF to share.
     ///   - completion: Closure called when the share sheet is dismissed.
     func sharePDF(_ url: URL, completion: (() -> Void)? = nil) {
+        shareFile(url, completion: completion)
+    }
+
+    /// Shares any local file URL using the system UIActivityViewController.
+    ///
+    /// - Parameters:
+    ///   - url: The file URL to share.
+    ///   - completion: Closure called when the share sheet is dismissed.
+    func shareFile(_ url: URL, completion: (() -> Void)? = nil) {
         let activityController = UIActivityViewController(activityItems: [url], applicationActivities: nil)
 
         if let completion = completion {

@@ -9,6 +9,7 @@ struct SettingsView: View {
 
     @Bindable var viewModel: SettingsViewModel
     @State private var showPaywall = false
+    @State private var showLegal = false
     @Environment(\.colorScheme) private var colorScheme
 
     // MARK: Body
@@ -53,6 +54,11 @@ struct SettingsView: View {
         .sheet(isPresented: $showPaywall) {
             PaywallView()
         }
+        .sheet(isPresented: $showLegal) {
+            NavigationStack {
+                LegalView()
+            }
+        }
         .alert("Restore Purchases", isPresented: $viewModel.showRestoreAlert) {
             Button("OK", role: .cancel) {
                 viewModel.dismissRestoreAlert()
@@ -66,6 +72,13 @@ struct SettingsView: View {
             }
         } message: {
             EmptyView()
+        }
+        .alert("Export Failed", isPresented: $viewModel.showExportError) {
+            Button("OK", role: .cancel) {
+                viewModel.dismissExportError()
+            }
+        } message: {
+            Text(viewModel.exportErrorMessage ?? "Unable to export app data.")
         }
     }
 
@@ -290,7 +303,7 @@ struct SettingsView: View {
                         icon: "square.and.arrow.up.fill",
                         iconColor: Theme.primary
                     ) {
-                        // Placeholder: Data export functionality
+                        exportData()
                     }
 
                     Divider()
@@ -302,7 +315,7 @@ struct SettingsView: View {
                         icon: "hand.raised.fill",
                         iconColor: Theme.accent
                     ) {
-                        // Placeholder: Open privacy policy
+                        showLegal = true
                     }
 
                     Divider()
@@ -337,6 +350,73 @@ struct SettingsView: View {
         guard let url = URL(string: "https://apps.apple.com/account/subscriptions") else { return }
         if UIApplication.shared.canOpenURL(url) {
             UIApplication.shared.open(url)
+        }
+    }
+
+    private func exportData() {
+        do {
+            let exportURL = try viewModel.makeDataExportFile()
+            ShareService.shared.shareFile(exportURL)
+        } catch {
+            viewModel.setExportError(error)
+        }
+    }
+}
+
+struct LegalView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: Theme.spacingL) {
+                legalSection(
+                    title: "Privacy Policy",
+                    body: "SnagSnap stores inspection reports, photos, annotations, PDF exports, and profile details on your device. The app uses camera and photo library access only when you choose to capture or attach inspection photos. SnagSnap does not sell your data or use third-party tracking."
+                )
+
+                legalSection(
+                    title: "Data Export",
+                    body: "You can export your report metadata from Settings. Photo and PDF files remain in app storage and can be shared from report workflows."
+                )
+
+                legalSection(
+                    title: "Subscriptions",
+                    body: "SnagSnap Pro subscriptions are processed by Apple through StoreKit. Subscriptions auto-renew until cancelled and can be managed from your App Store account settings."
+                )
+
+                legalSection(
+                    title: "Terms of Use",
+                    body: "SnagSnap is provided as a reporting tool. You are responsible for checking report content before sharing it with clients, tenants, contractors, or other parties."
+                )
+
+                legalSection(
+                    title: "Support",
+                    body: "Questions, privacy requests, and support issues can be sent to support@snagsnap.app."
+                )
+            }
+            .padding(Theme.spacingL)
+        }
+        .background(Theme.background.ignoresSafeArea())
+        .navigationTitle("Terms & Privacy")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Done") { dismiss() }
+            }
+        }
+    }
+
+    private func legalSection(title: String, body: String) -> some View {
+        SSCard(padding: Theme.spacingL, cornerRadius: Theme.radiusLarge) {
+            VStack(alignment: .leading, spacing: Theme.spacingS) {
+                Text(title)
+                    .font(Theme.fontHeadline)
+                    .foregroundStyle(Theme.ink)
+                Text(body)
+                    .font(Theme.fontBody)
+                    .foregroundStyle(Theme.secondaryLabel)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 }

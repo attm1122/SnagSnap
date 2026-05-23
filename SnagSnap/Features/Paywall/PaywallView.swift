@@ -13,6 +13,7 @@ struct PaywallView: View {
     @State private var showPurchaseSuccess = false
     @State private var showRestoreToast = false
     @State private var showErrorToast = false
+    @State private var showLegal = false
 
     private let benefits = [
         "Unlimited property reports",
@@ -93,6 +94,11 @@ struct PaywallView: View {
             style: .success,
             duration: 2.0
         )
+        .sheet(isPresented: $showLegal) {
+            NavigationStack {
+                LegalView()
+            }
+        }
     }
 
     // MARK: - Header
@@ -316,8 +322,9 @@ struct PaywallView: View {
             }
             .disabled(viewModel.isPurchasing)
 
-            SSButton(title: "Terms & Privacy", style: .tertiary) {}
-                .disabled(true)
+            SSButton(title: "Terms & Privacy", style: .tertiary) {
+                showLegal = true
+            }
 
             Text("Subscriptions auto-renew until cancelled. Manage in Settings.")
                 .font(Theme.caption)

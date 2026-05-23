@@ -80,6 +80,7 @@ final class CreateReportViewModel {
 
         do {
             try modelContext.save()
+            EntitlementManager.shared.incrementReportCount()
             onComplete(report)
             return report
         } catch {
@@ -169,11 +170,10 @@ struct CreateReportView: View {
 
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Create") {
-                        if let report = viewModel?.createReport() {
+                        if viewModel?.createReport() != nil {
                             HapticService.shared.play(.success)
                             toastMessage = "Report created"
                             showToast = true
-                            onComplete?(report)
                             dismiss()
                         } else {
                             HapticService.shared.play(.warning)

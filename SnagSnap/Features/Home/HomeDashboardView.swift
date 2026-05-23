@@ -25,6 +25,8 @@ struct HomeDashboardView: View {
     @State private var toastMessage = ""
     @State private var showToast = false
     @State private var isRefreshing = false
+    @State private var showHelp = false
+    @State private var showAllReports = false
 
     /// SwiftData query for all inspection reports, sorted by creation date (newest first).
     @Query(sort: \InspectionReport.createdAt, order: .reverse)
@@ -83,6 +85,11 @@ struct HomeDashboardView: View {
             viewModel.configure(with: modelContext)
         }
         .toast(isPresented: $showToast, message: toastMessage, style: .success, duration: 2.0)
+        .sheet(isPresented: $showHelp) {
+            NavigationStack {
+                HelpCenterView()
+            }
+        }
     }
 
     // MARK: - Header
@@ -113,6 +120,7 @@ struct HomeDashboardView: View {
         HStack {
             CircleIconButton(systemName: "questionmark.bubble", label: "Help") {
                 HapticService.shared.play(.light)
+                showHelp = true
             }
 
             Spacer()
@@ -159,9 +167,11 @@ struct HomeDashboardView: View {
 
                     Spacer()
 
-                    if reports.count > 5 {
-                        Button("See All") {
-                            // Future: navigate to full reports list
+                    if viewModel.filteredReports(from: reports).count > 5 {
+                        Button(showAllReports ? "Show Less" : "See All") {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                                showAllReports.toggle()
+                            }
                         }
                         .font(Theme.fontSubheadline)
                         .foregroundStyle(Theme.primary)
@@ -267,7 +277,7 @@ struct HomeDashboardView: View {
     @ViewBuilder
     private var reportList: some View {
         let filtered = viewModel.filteredReports(from: reports)
-        let recent = Array(filtered.prefix(5))
+        let recent = showAllReports ? filtered : Array(filtered.prefix(5))
 
         if recent.isEmpty && !viewModel.searchText.isEmpty {
             // No search results
@@ -357,6 +367,72 @@ private struct HomeActionTile: View {
             )
         }
         .buttonStyle(.animated(haptic: .light))
+    }
+}
+
+struct HelpCenterView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: Theme.spacingL) {
+                VStack(alignment: .leading, spacing: Theme.spacingS) {
+                    Text("Help")
+                        .font(.system(size: 38, weight: .bold))
+                        .foregroundStyle(Theme.ink)
+
+                    Text("Build a complete property report in four steps.")
+                        .font(Theme.fontBody)
+                        .foregroundStyle(Theme.secondaryLabel)
+                }
+
+                helpStep("1", "Create a report", "Add the property, report type, inspection date, client, inspector, and notes.")
+                helpStep("2", "Add areas", "Break the property into rooms or zones so issues are easy to review.")
+                helpStep("3", "Capture issues", "Record severity, status, notes, and photos. Annotate photos before export when needed.")
+                helpStep("4", "Export PDF", "Use the Report tab to generate, preview, and share the finished PDF.")
+
+                SSCard(padding: Theme.spacingL, cornerRadius: Theme.radiusLarge) {
+                    VStack(alignment: .leading, spacing: Theme.spacingS) {
+                        Text("Support")
+                            .font(Theme.fontHeadline)
+                            .foregroundStyle(Theme.ink)
+                        Text("For help, email support@snagsnap.app. Include your app version from Settings and a short description of what happened.")
+                            .font(Theme.fontBody)
+                            .foregroundStyle(Theme.secondaryLabel)
+                    }
+                }
+            }
+            .padding(Theme.spacingL)
+        }
+        .background(Theme.background.ignoresSafeArea())
+        .navigationTitle("Help")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Done") { dismiss() }
+            }
+        }
+    }
+
+    private func helpStep(_ number: String, _ title: String, _ body: String) -> some View {
+        HStack(alignment: .top, spacing: Theme.spacingM) {
+            Text(number)
+                .font(.headline.weight(.bold))
+                .foregroundStyle(.white)
+                .frame(width: 34, height: 34)
+                .background(Theme.primary, in: Circle())
+
+            VStack(alignment: .leading, spacing: Theme.spacingXS) {
+                Text(title)
+                    .font(Theme.fontHeadline)
+                    .foregroundStyle(Theme.ink)
+                Text(body)
+                    .font(Theme.fontBody)
+                    .foregroundStyle(Theme.secondaryLabel)
+            }
+        }
+        .padding(Theme.spacingL)
+        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusLarge, style: .continuous))
     }
 }
 

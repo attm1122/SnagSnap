@@ -62,6 +62,7 @@
 		985FFBB2D214697CE7AF7802 /* IssuesTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E483278B6C6FD94ECA0CA79C /* IssuesTabView.swift */; };
 		995C4662BE87B70010510609 /* SSLoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6893FE08DA8063182353A4E /* SSLoadingView.swift */; };
 		9C1AE6DA7D5CB6470E771AB9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1F052EDEBEF94106D36F0FFC /* Assets.xcassets */; };
+		9F4B7D0F8A0E44A0A1F5B001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 9F4B7D0F8A0E44A0A1F5B000 /* PrivacyInfo.xcprivacy */; };
 		9DC6123E4AD502F72CEA129F /* PDFReportServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB817276F5006B95D561DB09 /* PDFReportServiceTests.swift */; };
 		A0219D18DAD37BC053637997 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AE6378851F0F91129FF65DE /* WelcomeView.swift */; };
 		A412EC7ADA89EECA2404BD70 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C946D7CE14E63DEF84AE851C /* Foundation.framework */; };
@@ -156,6 +157,7 @@
 		9A05A61AC08CAAE2A4D70BC9 /* OnboardingViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OnboardingViewModel.swift; path = Features/Onboarding/OnboardingViewModel.swift; sourceTree = "<group>"; };
 		9EE4844513CAB277304F4C4C /* PDFPreviewView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PDFPreviewView.swift; path = Features/Reports/PDFPreview/PDFPreviewView.swift; sourceTree = "<group>"; };
 		9F81F228B7763AE199F0642A /* HomeViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = HomeViewModel.swift; path = Features/Home/HomeViewModel.swift; sourceTree = "<group>"; };
+		9F4B7D0F8A0E44A0A1F5B000 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		A19BAB8F8CA06C6CC73D98AE /* IssueDetailView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = IssueDetailView.swift; path = Features/Issues/IssueDetailView.swift; sourceTree = "<group>"; };
 		A246768073A63D75E5C48648 /* MainTabView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MainTabView.swift; path = Features/Home/MainTabView.swift; sourceTree = "<group>"; };
 		A2ED86DDA824FDBB5DA7B52E /* String+Extensions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "String+Extensions.swift"; path = "Core/Extensions/String+Extensions.swift"; sourceTree = "<group>"; };
@@ -314,6 +316,7 @@
 				68DDDC362478B0B8563532F3 /* StoreKitService.swift */,
 				2A2F3B75985E9C955A5FDD14 /* ThumbnailService.swift */,
 				1F052EDEBEF94106D36F0FFC /* Assets.xcassets */,
+				9F4B7D0F8A0E44A0A1F5B000 /* PrivacyInfo.xcprivacy */,
 			);
 			name = SnagSnap;
 			path = SnagSnap;
@@ -422,6 +425,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9C1AE6DA7D5CB6470E771AB9 /* Assets.xcassets in Resources */,
+				9F4B7D0F8A0E44A0A1F5B001 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
