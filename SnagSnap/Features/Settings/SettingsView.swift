@@ -315,7 +315,18 @@ struct SettingsView: View {
                         icon: "hand.raised.fill",
                         iconColor: Theme.accent
                     ) {
-                        showLegal = true
+                        openPrivacyPolicy()
+                    }
+
+                    Divider()
+                        .padding(.leading, 44)
+
+                    SettingsNavigationRow(
+                        title: "Support",
+                        icon: "questionmark.bubble.fill",
+                        iconColor: Theme.primary
+                    ) {
+                        openSupport()
                     }
 
                     Divider()
@@ -348,6 +359,27 @@ struct SettingsView: View {
 
     private func openSubscriptionManagement() {
         guard let url = URL(string: "https://apps.apple.com/account/subscriptions") else { return }
+        if UIApplication.shared.canOpenURL(url) {
+            UIApplication.shared.open(url)
+        }
+    }
+
+    private func openPrivacyPolicy() {
+        guard let url = URL(string: "https://snagsnap.app/privacy") else {
+            showLegal = true
+            return
+        }
+
+        if UIApplication.shared.canOpenURL(url) {
+            UIApplication.shared.open(url)
+        } else {
+            showLegal = true
+        }
+    }
+
+    private func openSupport() {
+        guard let url = URL(string: "mailto:support@snagsnap.app?subject=SnagSnap%20Support") else { return }
+
         if UIApplication.shared.canOpenURL(url) {
             UIApplication.shared.open(url)
         }

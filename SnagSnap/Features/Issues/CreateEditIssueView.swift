@@ -328,18 +328,22 @@ struct CreateEditIssueView: View {
     var body: some View {
         NavigationStack {
             Form {
+                if issue == nil {
+                    captureFirstSection
+                        .entryAnimation(delay: 0.0)
+                }
                 titleSection
-                    .entryAnimation(delay: 0.0)
-                areaSection
                     .entryAnimation(delay: 0.05)
-                severitySection
+                areaSection
                     .entryAnimation(delay: 0.1)
-                statusSection
+                severitySection
                     .entryAnimation(delay: 0.15)
-                notesSection
+                statusSection
                     .entryAnimation(delay: 0.2)
-                photosSection
+                notesSection
                     .entryAnimation(delay: 0.25)
+                photosSection
+                    .entryAnimation(delay: 0.3)
             }
             .navigationTitle(viewModel?.navigationTitle ?? "Issue")
             .navigationBarTitleDisplayMode(.large)
@@ -420,6 +424,60 @@ struct CreateEditIssueView: View {
                 )
             }
         }
+    }
+
+    // MARK: - Capture First Section
+
+    private var captureFirstSection: some View {
+        Section {
+            VStack(alignment: .leading, spacing: Theme.spacingM) {
+                HStack(alignment: .top, spacing: Theme.spacingM) {
+                    Image(systemName: "camera.viewfinder")
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 54, height: 54)
+                        .background(Theme.primary, in: RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: Theme.spacingXS) {
+                        Text("Start with evidence")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(Theme.ink)
+                        Text("Take or attach photos first, then add the issue title, area, severity, and notes.")
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.secondaryLabel)
+                    }
+                }
+
+                HStack(spacing: Theme.spacingM) {
+                    SSButton("Take Photo", style: .primary, icon: "camera.fill", isFullWidth: true) {
+                        HapticService.shared.play(.medium)
+                        viewModel?.isShowingCamera = true
+                    }
+
+                    SSButton("Library", style: .secondary, icon: "photo.on.rectangle.angled", isFullWidth: true) {
+                        HapticService.shared.play(.medium)
+                        viewModel?.isShowingPhotoPicker = true
+                    }
+                }
+
+                let count = viewModel?.currentPhotos.count ?? 0
+                if count > 0 {
+                    HStack(spacing: Theme.spacingS) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(Theme.success)
+                        Text("\(count) photo\(count == 1 ? "" : "s") attached")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Theme.success)
+                    }
+                }
+            }
+            .padding(.vertical, Theme.spacingXS)
+        } header: {
+            Text("Capture")
+        } footer: {
+            Text("Photos can be annotated before export.")
+        }
+        .listRowBackground(Theme.cardBackground)
     }
 
     // MARK: - Title Section
