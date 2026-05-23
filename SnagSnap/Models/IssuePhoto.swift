@@ -71,11 +71,6 @@ class IssuePhoto {
 
     // MARK: - Computed Properties
 
-    /// Whether this photo should be included in the PDF report.
-    var includeInReport: Bool = true
-
-    // MARK: - Computed Properties
-
     /// Whether an annotated version of this photo exists.
     var hasAnnotation: Bool {
         annotatedImagePath != nil

@@ -240,65 +240,31 @@ class ReportRepository {
     ) async throws -> [InspectionReport] {
         let context = try validateContext()
 
-        // Build compound predicate
-        var predicates: [Predicate<InspectionReport>] = []
-
-        if let status = criteria.status {
-            let statusPredicate = #Predicate<InspectionReport> { report in
-                report.status == status
-            }
-            predicates.append(statusPredicate)
-        }
-
-        if let reportType = criteria.reportType {
-            let typePredicate = #Predicate<InspectionReport> { report in
-                report.reportType == reportType
-            }
-            predicates.append(typePredicate)
-        }
-
-        if let dateRange = criteria.dateRange {
-            let startDate = dateRange.lowerBound
-            let endDate = dateRange.upperBound
-            let datePredicate = #Predicate<InspectionReport> { report in
-                if let createdAt = report.createdAt {
-                    return createdAt >= startDate && createdAt <= endDate
-                }
-                return false
-            }
-            predicates.append(datePredicate)
-        }
-
-        // Combine predicates
-        let finalPredicate: Predicate<InspectionReport>?
-        if predicates.isEmpty {
-            finalPredicate = nil
-        } else if predicates.count == 1 {
-            finalPredicate = predicates[0]
-        } else {
-            // Combine multiple predicates with AND logic
-            finalPredicate = predicates.reduce(predicates[0]) { combined, next in
-                #Predicate<InspectionReport> { report in
-                    combined.evaluate(report) && next.evaluate(report)
-                }
-            }
-        }
-
         let descriptor = FetchDescriptor<InspectionReport>(
-            predicate: finalPredicate,
             sortBy: sortDescriptors(for: sortOrder)
         )
 
         do {
             var results = try context.fetch(descriptor)
 
-            // Apply text search in memory if needed
+            if let status = criteria.status {
+                results = results.filter { $0.status == status }
+            }
+
+            if let reportType = criteria.reportType {
+                results = results.filter { $0.reportType == reportType }
+            }
+
+            if let dateRange = criteria.dateRange {
+                results = results.filter { dateRange.contains($0.createdAt) }
+            }
+
             if let searchText = criteria.searchText, !searchText.isEmpty {
                 let lowercasedQuery = searchText.lowercased()
                 results = results.filter { report in
-                    let titleMatch = (report.title ?? "").lowercased().contains(lowercasedQuery)
-                    let propertyMatch = (report.propertyName ?? "").lowercased().contains(lowercasedQuery)
-                    let addressMatch = (report.propertyAddress ?? "").lowercased().contains(lowercasedQuery)
+                    let titleMatch = report.title.lowercased().contains(lowercasedQuery)
+                    let propertyMatch = report.propertyName.lowercased().contains(lowercasedQuery)
+                    let addressMatch = report.propertyAddress.lowercased().contains(lowercasedQuery)
                     return titleMatch || propertyMatch || addressMatch
                 }
             }
@@ -442,7 +408,7 @@ class ReportRepository {
             return allReports.filter { report in
                 guard let issues = report.issues else { return false }
                 return issues.contains { issue in
-                    (issue.title ?? "").lowercased().contains(lowercasedQuery)
+                    issue.title.lowercased().contains(lowercasedQuery)
                 }
             }
         } catch {
@@ -473,23 +439,19 @@ class ReportRepository {
         // Count by status
         var statusCounts: [ReportStatus: Int] = [:]
         for report in allReports {
-            if let status = report.status {
-                statusCounts[status, default: 0] += 1
-            }
+            statusCounts[report.status, default: 0] += 1
         }
 
         // Count by type
         var typeCounts: [ReportType: Int] = [:]
         for report in allReports {
-            if let type = report.reportType {
-                typeCounts[type, default: 0] += 1
-            }
+            typeCounts[report.reportType, default: 0] += 1
         }
 
         // Recent reports (last 30 days)
         let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
         let recentReports = allReports.filter {
-            ($0.createdAt ?? Date.distantPast) >= thirtyDaysAgo
+            $0.createdAt >= thirtyDaysAgo
         }.count
 
         return ReportStatistics(
@@ -551,16 +513,3 @@ struct ReportStatistics {
 }
 
 // MARK: - Predicate Extensions
-
-private extension Predicate {
-    /// Evaluates the predicate with the given value.
-    ///
-    /// This is a helper for combining predicates manually.
-    func evaluate(_ value: Subject) -> Bool {
-        // SwiftData predicates use `#Predicate` macro which generates
-        // a Predicate<Subject> that can be used in FetchDescriptor.
-        // For manual evaluation, we rely on the FetchDescriptor doing the work.
-        // This method exists for type-checking in combined predicates.
-        true
-    }
-}

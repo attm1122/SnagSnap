@@ -381,65 +381,6 @@ struct CreateReportView: View {
     }
 }
 
-// MARK: - Paywall Placeholder View
-
-private struct PaywallView: View {
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: Theme.spacingXL) {
-                Spacer()
-
-                Image(systemName: "crown.fill")
-                    .font(.system(size: 72))
-                    .foregroundStyle(Theme.warning)
-
-                VStack(spacing: Theme.spacingS) {
-                    Text("Upgrade to Pro")
-                        .font(.title.weight(.bold))
-                        .foregroundStyle(.primary)
-
-                    Text("Get unlimited inspection reports, watermark-free PDFs, and advanced export options.")
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, Theme.spacingXL)
-                }
-
-                VStack(alignment: .leading, spacing: Theme.spacingM) {
-                    FeatureRow(icon: "infinity", text: "Unlimited reports")
-                    FeatureRow(icon: "doc.badge.checkmark", text: "Watermark-free PDFs")
-                    FeatureRow(icon: "wrench.and.screwdriver", text: "Advanced export options")
-                    FeatureRow(icon: "cloud", text: "Cloud backup")
-                }
-                .padding(.horizontal, Theme.spacingXL)
-
-                Spacer()
-
-                SSButton("Upgrade Now", style: .primary, isFullWidth: true) {
-                    dismiss()
-                }
-                .padding(.horizontal, Theme.spacingL)
-
-                SSButton("Maybe Later", style: .tertiary) {
-                    dismiss()
-                }
-            }
-            .padding(.vertical, Theme.spacingXL)
-            .navigationTitle("")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                }
-            }
-        }
-    }
-}
-
 // MARK: - Feature Row
 
 private struct FeatureRow: View {

@@ -187,7 +187,7 @@ struct CameraCaptureView: View {
             // Image preview
             Image(uiImage: image)
                 .resizable()
-                .scaledToFit
+                .scaledToFit()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color.black)
 

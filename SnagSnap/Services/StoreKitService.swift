@@ -363,7 +363,7 @@ class StoreKitService {
 
         if monthlyPrice > 0 {
             let savings = ((monthlyPrice - monthlyEquivalent) / monthlyPrice) * 100
-            return "Save \(String(format: "%.0f", savings))% with annual"
+            return "Save \(String(format: "%.0f", NSDecimalNumber(decimal: savings).doubleValue))% with annual"
         }
 
         return "Save with annual billing"
@@ -379,7 +379,7 @@ class StoreKitService {
     /// - Returns: The task handle for the listener.
     private func listenForTransactions() -> Task<Void, Never> {
         Task.detached { [weak self] in
-            for await update in Transaction.updates {
+            for await update in StoreKit.Transaction.updates {
                 guard let self = self else { break }
 
                 switch update {
@@ -401,7 +401,7 @@ class StoreKitService {
     /// the transaction as finished.
     ///
     /// - Parameter transaction: The verified `Transaction` to process.
-    private func handleVerifiedTransaction(_ transaction: Transaction) async {
+    private func handleVerifiedTransaction(_ transaction: StoreKit.Transaction) async {
         purchasedProductIDs.insert(transaction.productID)
 
         if transaction.productID == Self.monthlyProductID {

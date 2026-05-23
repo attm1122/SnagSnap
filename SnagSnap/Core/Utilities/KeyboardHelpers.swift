@@ -20,11 +20,6 @@ struct DismissKeyboardOnTap: ViewModifier {
 // MARK: - View Extensions
 
 extension View {
-    /// Dismisses the keyboard when the user taps on this view.
-    func dismissKeyboardOnTap() -> some View {
-        modifier(DismissKeyboardOnTap())
-    }
-
     /// Dismisses the keyboard immediately when the user scrolls.
     func dismissKeyboardOnDrag() -> some View {
         self.scrollDismissesKeyboard(.immediately)

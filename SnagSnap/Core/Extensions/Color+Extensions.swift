@@ -215,8 +215,8 @@ extension Color {
     static func forReportStatus(_ status: ReportStatus) -> Color {
         switch status {
         case .draft: return Theme.statusDraft
-        case .inProgress: return Theme.statusInProgress
-        case .completed: return Theme.statusCompleted
+        case .ready: return Theme.statusReady
+        case .exported: return Theme.statusExported
         case .archived: return Theme.statusArchived
         }
     }
@@ -226,7 +226,8 @@ extension Color {
         switch status {
         case .open: return Theme.issueStatusOpen
         case .inProgress: return Theme.issueStatusInProgress
-        case .resolved: return Theme.issueStatusResolved
+        case .fixed: return Theme.issueStatusResolved
+        case .notAnIssue, .archived: return Theme.issueStatusArchived
         }
     }
 
@@ -236,7 +237,7 @@ extension Color {
         case .low: return Theme.severityLow
         case .medium: return Theme.severityMedium
         case .high: return Theme.severityHigh
-        case .critical: return Theme.severityCritical
+        case .urgent: return Theme.severityUrgent
         }
     }
 }

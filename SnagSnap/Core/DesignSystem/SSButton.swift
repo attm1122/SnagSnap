@@ -55,6 +55,26 @@ struct SSButton: View {
         self.action = action
     }
 
+    init(
+        title: String,
+        style: SSButtonStyle = .primary,
+        icon: String? = nil,
+        isLoading: Bool = false,
+        isDisabled: Bool = false,
+        isFullWidth: Bool = false,
+        action: @escaping () -> Void
+    ) {
+        self.init(
+            title,
+            style: style,
+            icon: icon,
+            isLoading: isLoading,
+            isDisabled: isDisabled,
+            isFullWidth: isFullWidth,
+            action: action
+        )
+    }
+
     // MARK: - Body
 
     var body: some View {
@@ -129,10 +149,10 @@ struct SSButton: View {
     }
 
     private var clipShape: some Shape {
-        switch style {
-        case .fab: Circle()
-        default: RoundedRectangle(cornerRadius: Theme.cornerRadiusM, style: .continuous)
-        }
+        RoundedRectangle(
+            cornerRadius: style == .fab ? fabSize / 2 : Theme.cornerRadiusM,
+            style: .continuous
+        )
     }
 
     // MARK: - Colors
@@ -197,14 +217,6 @@ private extension View {
         modifier(PressDetectableModifier(isPressed: isPressed))
     }
 
-    @ViewBuilder
-    func `if`<Transform: View>(_ condition: Bool, transform: (Self) -> Transform) -> some View {
-        if condition {
-            transform(self)
-        } else {
-            self
-        }
-    }
 }
 
 // MARK: - Preview

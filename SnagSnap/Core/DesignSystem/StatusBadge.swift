@@ -29,9 +29,9 @@ struct ReportStatusBadge: View {
         switch status {
         case .draft:
             return "doc"
-        case .inProgress:
+        case .ready:
             return "arrow.triangle.2.circlepath"
-        case .completed:
+        case .exported:
             return "checkmark.seal.fill"
         case .archived:
             return "archivebox.fill"
@@ -43,9 +43,9 @@ struct ReportStatusBadge: View {
         switch status {
         case .draft:
             return Color.primary
-        case .inProgress:
+        case .ready:
             return .blue
-        case .completed:
+        case .exported:
             return .green
         case .archived:
             return .orange
@@ -83,7 +83,8 @@ struct IssueStatusBadge: View {
         switch status {
         case .open: return Theme.issueStatusOpen
         case .inProgress: return Theme.issueStatusInProgress
-        case .resolved: return Theme.issueStatusResolved
+        case .fixed: return Theme.issueStatusResolved
+        case .notAnIssue, .archived: return Theme.issueStatusArchived
         }
     }
 
@@ -91,7 +92,8 @@ struct IssueStatusBadge: View {
         switch status {
         case .open: return .red
         case .inProgress: return .blue
-        case .resolved: return .green
+        case .fixed: return .green
+        case .notAnIssue, .archived: return .gray
         }
     }
 
@@ -134,8 +136,8 @@ struct SeverityIndicator: View {
             return Theme.severityMedium
         case .high:
             return Theme.severityHigh
-        case .critical:
-            return Theme.severityCritical
+        case .urgent:
+            return Theme.severityUrgent
         }
     }
 
@@ -148,7 +150,7 @@ struct SeverityIndicator: View {
             return .orange
         case .high:
             return .orange
-        case .critical:
+        case .urgent:
             return Theme.error
         }
     }
@@ -186,7 +188,7 @@ struct SeverityDot: View {
         case .low: return Theme.severityLow
         case .medium: return Theme.severityMedium
         case .high: return Theme.severityHigh
-        case .critical: return Theme.severityCritical
+        case .urgent: return Theme.severityUrgent
         }
     }
 }
@@ -219,7 +221,7 @@ struct PriorityBadge: View {
         case .low: return "arrow.down"
         case .medium: return "minus"
         case .high: return "arrow.up"
-        case .critical: return "exclamationmark.triangle.fill"
+        case .urgent: return "exclamationmark.triangle.fill"
         }
     }
 
@@ -228,7 +230,7 @@ struct PriorityBadge: View {
         case .low: return .gray
         case .medium: return .orange
         case .high: return .orange
-        case .critical: return Theme.error
+        case .urgent: return Theme.error
         }
     }
 
@@ -248,8 +250,8 @@ struct PriorityBadge: View {
                     .font(Theme.fontHeadline)
                 HStack {
                     ReportStatusBadge(status: .draft)
-                    ReportStatusBadge(status: .inProgress)
-                    ReportStatusBadge(status: .completed)
+                    ReportStatusBadge(status: .ready)
+                    ReportStatusBadge(status: .exported)
                     ReportStatusBadge(status: .archived)
                 }
             }
@@ -263,7 +265,7 @@ struct PriorityBadge: View {
                 HStack {
                     IssueStatusBadge(status: .open)
                     IssueStatusBadge(status: .inProgress)
-                    IssueStatusBadge(status: .resolved)
+                    IssueStatusBadge(status: .fixed)
                 }
             }
 
@@ -277,7 +279,7 @@ struct PriorityBadge: View {
                     SeverityIndicator(severity: .low, showLabel: true)
                     SeverityIndicator(severity: .medium, showLabel: true)
                     SeverityIndicator(severity: .high, showLabel: true)
-                    SeverityIndicator(severity: .critical, showLabel: true)
+                    SeverityIndicator(severity: .urgent, showLabel: true)
                 }
             }
 
@@ -289,7 +291,7 @@ struct PriorityBadge: View {
                     SeverityIndicator(severity: .low, showLabel: false)
                     SeverityIndicator(severity: .medium, showLabel: false)
                     SeverityIndicator(severity: .high, showLabel: false)
-                    SeverityIndicator(severity: .critical, showLabel: false)
+                    SeverityIndicator(severity: .urgent, showLabel: false)
                 }
             }
 
@@ -303,7 +305,7 @@ struct PriorityBadge: View {
                     PriorityBadge(severity: .low)
                     PriorityBadge(severity: .medium)
                     PriorityBadge(severity: .high)
-                    PriorityBadge(severity: .critical)
+                    PriorityBadge(severity: .urgent)
                 }
             }
 
@@ -317,7 +319,7 @@ struct PriorityBadge: View {
                     SeverityDot(severity: .low)
                     SeverityDot(severity: .medium)
                     SeverityDot(severity: .high)
-                    SeverityDot(severity: .critical)
+                    SeverityDot(severity: .urgent)
                 }
             }
         }

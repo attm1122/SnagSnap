@@ -56,7 +56,7 @@ struct ImageViewerView: View {
                 if let uiImage = displayImage {
                     Image(uiImage: uiImage)
                         .resizable()
-                        .scaledToFit
+                        .scaledToFit()
                         .scaleEffect(scale)
                         .offset(offset)
                         .gesture(magnificationGesture)

@@ -58,7 +58,7 @@ struct PDFPreviewView: View {
                         title: "Preview Unavailable",
                         message: errorMessage,
                         retryAction: {
-                            errorMessage = nil
+                            self.errorMessage = nil
                             isGenerating = true
                             generatePreview()
                         },

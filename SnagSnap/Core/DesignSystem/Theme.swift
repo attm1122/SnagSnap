@@ -22,6 +22,7 @@ enum Theme {
 
     // MARK: Semantic Colors
     static let success = Color(red: 0.20, green: 0.78, blue: 0.35)
+    static let info = Color.blue
     static let warning = Color(red: 1.0, green: 0.65, blue: 0.15)
     static let error = Color(red: 0.92, green: 0.26, blue: 0.21)
 
@@ -72,6 +73,7 @@ enum Theme {
     static let bodyMedium = Font.system(.body, design: .default, weight: .medium)
 
     // MARK: Icon Sizes
+    static let iconSizeS: CGFloat = 12
     static let iconSizeM: CGFloat = 16
     static let iconSizeL: CGFloat = 24
     static let iconSizeXL: CGFloat = 32
@@ -106,6 +108,9 @@ enum Theme {
     static let shadowRadiusLarge: CGFloat = 16
     static let shadowYOffsetSmall: CGFloat = 2
     static let shadowYOffsetMedium: CGFloat = 4
+    static let shadowRadius: CGFloat = shadowRadiusMedium
+    static let shadowY: CGFloat = shadowYOffsetSmall
+    static let tertiaryBackground = Color(.tertiarySystemGroupedBackground)
 
     // MARK: Icons (SF Symbols)
     static let iconHome = "house.fill"

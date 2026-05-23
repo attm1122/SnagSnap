@@ -17,7 +17,7 @@ struct ReportTabView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     let report: InspectionReport
-    let viewModel: ReportWorkspaceViewModel
+    @Bindable var viewModel: ReportWorkspaceViewModel
 
     @State private var showRegenerateConfirm = false
     @State private var showPDFPreview = false

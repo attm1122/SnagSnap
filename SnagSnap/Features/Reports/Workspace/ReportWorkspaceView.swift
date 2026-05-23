@@ -96,7 +96,7 @@ struct ReportWorkspaceView: View {
     // MARK: - Actions
 
     private func shareReport() {
-        viewModel.generatePDF(for: report)
+        viewModel.generatePDF(for: report, modelContext: modelContext)
         viewModel.prepareShare()
     }
 }

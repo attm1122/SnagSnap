@@ -305,10 +305,6 @@ final class ReportWorkspaceViewModel {
         if case .success(let data) = pdfState {
             pdfDataToShare = data
             HapticService.shared.play(.light)
-            if let data = pdfDataToShare {
-                // Build report title dynamically
-                // Note: title accessed via report passed from view
-            }
         }
     }
 

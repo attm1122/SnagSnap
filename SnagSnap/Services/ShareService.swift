@@ -34,7 +34,7 @@ final class ShareService {
         let activityController = UIActivityViewController(activityItems: items, applicationActivities: nil)
 
         if let completion = completion {
-            activityController.completionWithItemsHandler { _, _, _, _ in
+            activityController.completionWithItemsHandler = { _, _, _, _ in
                 completion()
             }
         }
@@ -81,7 +81,7 @@ final class ShareService {
         let activityController = UIActivityViewController(activityItems: [url], applicationActivities: nil)
 
         if let completion = completion {
-            activityController.completionWithItemsHandler { _, _, _, _ in
+            activityController.completionWithItemsHandler = { _, _, _, _ in
                 completion()
             }
         }
@@ -129,7 +129,7 @@ final class ShareService {
         ]
 
         if let completion = completion {
-            activityController.completionWithItemsHandler { _, _, _, _ in
+            activityController.completionWithItemsHandler = { _, _, _, _ in
                 completion()
             }
         }

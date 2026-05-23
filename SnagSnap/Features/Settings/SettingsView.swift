@@ -62,7 +62,7 @@ struct SettingsView: View {
     private var profileSection: some View {
         SSCard {
             VStack(alignment: .leading, spacing: Theme.spacingM) {
-                SSSectionHeader(title: "Your Profile", icon: "person.fill")
+                SettingsSectionHeader(title: "Your Profile", icon: "person.fill")
 
                 VStack(spacing: Theme.spacingM) {
                     // Company Name
@@ -117,7 +117,7 @@ struct SettingsView: View {
     private var subscriptionSection: some View {
         SSCard {
             VStack(alignment: .leading, spacing: Theme.spacingM) {
-                SSSectionHeader(title: "Subscription", icon: "crown.fill")
+                SettingsSectionHeader(title: "Subscription", icon: "crown.fill")
 
                 VStack(alignment: .leading, spacing: Theme.spacingM) {
                     // Current Plan Row
@@ -207,7 +207,7 @@ struct SettingsView: View {
     private var defaultSettingsSection: some View {
         SSCard {
             VStack(alignment: .leading, spacing: Theme.spacingM) {
-                SSSectionHeader(title: "PDF Export Defaults", icon: "doc.text.fill")
+                SettingsSectionHeader(title: "PDF Export Defaults", icon: "doc.text.fill")
 
                 VStack(spacing: Theme.spacingM) {
                     // Default Inspector Name
@@ -251,7 +251,7 @@ struct SettingsView: View {
     private var aboutSection: some View {
         SSCard {
             VStack(alignment: .leading, spacing: Theme.spacingM) {
-                SSSectionHeader(title: "About", icon: "info.circle.fill")
+                SettingsSectionHeader(title: "About", icon: "info.circle.fill")
 
                 VStack(spacing: 0) {
                     // Export Data Row
@@ -419,7 +419,7 @@ private struct SettingsNavigationRow: View {
 
 // MARK: - Section Header View
 
-private struct SSSectionHeader: View {
+private struct SettingsSectionHeader: View {
     let title: String
     let icon: String
 
@@ -444,7 +444,7 @@ private struct SSSectionHeader: View {
     let schema = Schema([UserProfile.self])
     let container = try! ModelContainer(for: schema, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
 
-    return NavigationStack {
+    NavigationStack {
         SettingsView(viewModel: SettingsViewModel(modelContext: container.mainContext))
     }
     .modelContainer(container)

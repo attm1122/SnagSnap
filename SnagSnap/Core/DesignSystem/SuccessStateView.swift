@@ -2,12 +2,23 @@ import SwiftUI
 
 /// A full-screen success state with animated checkmark and action buttons.
 struct SuccessStateView: View {
+    struct Action {
+        let title: String
+        let icon: String?
+        let handler: () -> Void
+
+        init(title: String, icon: String? = nil, handler: @escaping () -> Void) {
+            self.title = title
+            self.icon = icon
+            self.handler = handler
+        }
+    }
 
     let title: String
     let message: String?
-    let primaryAction: (title: String, action: () -> Void)
-    let secondaryAction: (title: String, action: () -> Void)?
-    let tertiaryAction: (title: String, action: () -> Void)?
+    let primaryAction: Action
+    let secondaryAction: Action?
+    let tertiaryAction: Action?
 
     @State private var showCheckmark = false
     @State private var showContent = false
@@ -52,18 +63,18 @@ struct SuccessStateView: View {
 
             // Actions
             VStack(spacing: Theme.spacingM) {
-                SSButton(title: primaryAction.title, action: primaryAction.action)
+                SSButton(primaryAction.title, icon: primaryAction.icon, isFullWidth: true, action: primaryAction.handler)
                     .opacity(showContent ? 1.0 : 0)
                     .offset(y: showContent ? 0 : 20)
 
                 if let secondary = secondaryAction {
-                    SSButton(title: secondary.title, style: .secondary, action: secondary.action)
+                    SSButton(secondary.title, style: .secondary, icon: secondary.icon, isFullWidth: true, action: secondary.handler)
                         .opacity(showContent ? 1.0 : 0)
                         .offset(y: showContent ? 0 : 20)
                 }
 
                 if let tertiary = tertiaryAction {
-                    SSButton(title: tertiary.title, style: .tertiary, action: tertiary.action)
+                    SSButton(tertiary.title, style: .tertiary, icon: tertiary.icon, action: tertiary.handler)
                         .opacity(showContent ? 1.0 : 0)
                         .offset(y: showContent ? 0 : 20)
                 }
@@ -94,9 +105,9 @@ struct SuccessStateView: View {
     SuccessStateView(
         title: "Report Generated!",
         message: "Your PDF report has been successfully created and saved.",
-        primaryAction: (title: "View Report", action: {}),
-        secondaryAction: (title: "Share", action: {}),
-        tertiaryAction: (title: "Back to Home", action: {})
+        primaryAction: .init(title: "View Report", handler: {}),
+        secondaryAction: .init(title: "Share", handler: {}),
+        tertiaryAction: .init(title: "Back to Home", handler: {})
     )
 }
 
@@ -104,7 +115,7 @@ struct SuccessStateView: View {
     SuccessStateView(
         title: "Inspection Saved",
         message: nil,
-        primaryAction: (title: "Continue", action: {}),
+        primaryAction: .init(title: "Continue", handler: {}),
         secondaryAction: nil,
         tertiaryAction: nil
     )

@@ -227,14 +227,15 @@ class CameraPermissionService {
         guard UIApplication.shared.canOpenURL(url) else { return }
 
         // Register a one-time observer for when the app becomes active again
-        var observer: NSObjectProtocol?
-        observer = NotificationCenter.default.addObserver(
+        let token = NotificationObserverToken()
+        token.observer = NotificationCenter.default.addObserver(
             forName: UIApplication.didBecomeActiveNotification,
             object: nil,
             queue: .main
-        ) { _ in
-            if let observer = observer {
+        ) { [token] _ in
+            if let observer = token.observer {
                 NotificationCenter.default.removeObserver(observer)
+                token.observer = nil
             }
             onReturn()
         }
@@ -269,4 +270,8 @@ class CameraPermissionService {
             throw CameraPermissionError.unknownAuthorizationStatus
         }
     }
+}
+
+private final class NotificationObserverToken {
+    var observer: NSObjectProtocol?
 }

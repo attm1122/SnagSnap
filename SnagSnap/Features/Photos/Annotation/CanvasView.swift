@@ -81,13 +81,10 @@ struct CanvasView: UIViewRepresentable {
         context.coordinator.canvasView = canvasView
 
         // Set up tool picker
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let window = windowScene.windows.first {
-            let toolPicker = PKToolPicker.shared(for: windowScene)
-            toolPicker?.setVisible(true, forFirstResponder: canvasView)
-            toolPicker?.addObserver(canvasView)
-            context.coordinator.toolPicker = toolPicker
-        }
+        let toolPicker = PKToolPicker()
+        toolPicker.setVisible(true, forFirstResponder: canvasView)
+        toolPicker.addObserver(context.coordinator)
+        context.coordinator.toolPicker = toolPicker
 
         canvasView.becomeFirstResponder()
 
@@ -98,10 +95,7 @@ struct CanvasView: UIViewRepresentable {
     }
 
     func updateUIView(_ canvasView: CanvasUIView, context: Context) {
-        // Update the selected tool if it changed
-        if canvasView.tool != selectedTool {
-            canvasView.tool = selectedTool
-        }
+        canvasView.tool = selectedTool
 
         // Handle undo trigger
         if undoTrigger {
@@ -130,7 +124,7 @@ struct CanvasView: UIViewRepresentable {
 
     // MARK: - Coordinator
 
-    final class Coordinator: NSObject, PKCanvasViewDelegate {
+    final class Coordinator: NSObject, PKCanvasViewDelegate, PKToolPickerObserver {
         let parent: CanvasView
         weak var canvasView: CanvasUIView?
         weak var toolPicker: PKToolPicker?
@@ -145,6 +139,14 @@ struct CanvasView: UIViewRepresentable {
             DispatchQueue.main.async { [weak self] in
                 self?.parent.isEmpty = canvasView.drawing.bounds.isEmpty
             }
+        }
+
+        func toolPickerSelectedToolDidChange(_ toolPicker: PKToolPicker) {
+            // Tool changes are driven by the SwiftUI controls.
+        }
+
+        func toolPickerIsRulerActiveDidChange(_ toolPicker: PKToolPicker) {
+            // Ruler state changes do not affect the saved annotation.
         }
 
         // MARK: - Actions
@@ -203,13 +205,6 @@ final class CanvasUIView: PKCanvasView {
     private func setup() {
         // Configure for finger + Apple Pencil input
         drawingPolicy = .anyInput
-
-        // Set up undo manager
-        if undoManager == nil {
-            let newUndoManager = UndoManager()
-            // We can't directly set the undo manager on PKCanvasView,
-            // but the canvas view provides one through the responder chain
-        }
     }
 
     // MARK: - Layout
@@ -221,26 +216,5 @@ final class CanvasUIView: PKCanvasView {
         if let imageView = viewWithTag(100) {
             imageView.frame = bounds
         }
-    }
-}
-
-// MARK: - PKToolPicker Observer Helper
-
-extension PKCanvasView: @retroactive PKToolPickerObserver {
-    /// Required by PKToolPickerObserver protocol
-    public func toolPickerSelectedToolDidChange(_ toolPicker: PKToolPicker) {
-        // Tool changes are handled by the parent view
-    }
-
-    public func toolPickerIsRulerActiveDidChange(_ toolPicker: PKToolPicker) {
-        // Ruler state changes — no action needed
-    }
-
-    public func toolPickerVisibilityDidChange(_ toolPicker: PKToolPicker) {
-        // Visibility changes — no action needed
-    }
-
-    public func toolPickerFramesObscuredDidChange(_ toolPicker: PKToolPicker) {
-        // Frame changes — no action needed
     }
 }

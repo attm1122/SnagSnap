@@ -31,30 +31,7 @@ struct SSStagedLoadingView: View {
                 // Stage labels
                 VStack(alignment: .leading, spacing: Theme.spacingS) {
                     ForEach(Array(stages.enumerated()), id: \.offset) { index, stage in
-                        HStack(spacing: Theme.spacingS) {
-                            // Status icon
-                            Group {
-                                if index < currentStage {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundStyle(Theme.success)
-                                } else if index == currentStage {
-                                    ProgressView()
-                                        .scaleEffect(0.7)
-                                        .tint(Theme.primary)
-                                } else {
-                                    Image(systemName: "circle")
-                                        .foregroundStyle(.tertiary)
-                                }
-                            }
-
-                            Text(stage)
-                                .font(index == currentStage ? Theme.callout : Theme.footnote)
-                                .foregroundStyle(
-                                    index < currentStage ? Theme.success :
-                                    index == currentStage ? .primary : .tertiary
-                                )
-                                .strikethrough(index < currentStage)
-                        }
+                        stageRow(index: index, stage: stage)
                         .opacity(reduceMotion ? 1.0 : (index <= currentStage ? 1.0 : 0.5))
                     }
                 }
@@ -70,6 +47,37 @@ struct SSStagedLoadingView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(title): stage \(currentStage + 1) of \(stages.count), \(stages[currentStage])")
+    }
+
+    @ViewBuilder
+    private func statusIcon(for index: Int) -> some View {
+        if index < currentStage {
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundStyle(Theme.success)
+        } else if index == currentStage {
+            ProgressView()
+                .scaleEffect(0.7)
+                .tint(Theme.primary)
+        } else {
+            Image(systemName: "circle")
+                .foregroundStyle(.tertiary)
+        }
+    }
+
+    private func stageRow(index: Int, stage: String) -> some View {
+        let isCompleted = index < currentStage
+        let isCurrent = index == currentStage
+        let textColor: Color = isCompleted ? Theme.success : (isCurrent ? Theme.label : Theme.tertiaryLabel)
+        let textFont: Font = isCurrent ? Theme.callout : Theme.footnote
+
+        return HStack(spacing: Theme.spacingS) {
+            statusIcon(for: index)
+
+            Text(stage)
+                .font(textFont)
+                .foregroundStyle(textColor)
+                .strikethrough(isCompleted)
+        }
     }
 }
 

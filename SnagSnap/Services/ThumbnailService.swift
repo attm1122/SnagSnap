@@ -116,12 +116,14 @@ class ThumbnailService {
 
         // Check cache first
         let cacheKey = self.cacheKey(for: path, size: size, resizeMode: resizeMode, cornerRadius: cornerRadius)
+        let cacheKeyString = cacheKey as String
         if let cached = cache.object(forKey: cacheKey) {
             return cached
         }
 
         // Coalesce duplicate requests
-        return try await taskRegistry.withTask(for: cacheKey as String) {
+        return try await taskRegistry.withTask(for: cacheKeyString) {
+            let cacheKey = cacheKeyString as NSString
             // Check cache again in case another task finished while we were waiting
             if let cached = self.cache.object(forKey: cacheKey) {
                 return cached
@@ -144,7 +146,7 @@ class ThumbnailService {
             // Check for cancellation before heavy work
             try Task.checkCancellation()
 
-            let thumbnail = await self.renderThumbnail(
+            let thumbnail = self.renderThumbnail(
                 from: sourceImage,
                 size: size,
                 resizeMode: resizeMode,
@@ -184,7 +186,7 @@ class ThumbnailService {
 
         try Task.checkCancellation()
 
-        let thumbnail = await renderThumbnail(
+        let thumbnail = renderThumbnail(
             from: image,
             size: size,
             resizeMode: resizeMode,
@@ -278,57 +280,55 @@ class ThumbnailService {
         size: CGSize,
         resizeMode: ThumbnailResizeMode,
         cornerRadius: CGFloat?
-    ) async -> UIImage {
-        await Task.detached(priority: .userInitiated) {
-            let format = UIGraphicsImageRendererFormat()
-            format.scale = UIScreen.main.scale
-            format.preferredRange = .standard
+    ) -> UIImage {
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = UIScreen.main.scale
+        format.preferredRange = .standard
 
-            let renderer = UIGraphicsImageRenderer(size: size, format: format)
-            return renderer.image { context in
-                let rect = CGRect(origin: .zero, size: size)
+        let renderer = UIGraphicsImageRenderer(size: size, format: format)
+        return renderer.image { _ in
+            let rect = CGRect(origin: .zero, size: size)
 
-                // Apply corner radius clipping if requested
-                if let cornerRadius = cornerRadius, cornerRadius > 0 {
-                    let path = UIBezierPath(
-                        roundedRect: rect,
-                        cornerRadius: cornerRadius
-                    )
-                    path.addClip()
-                }
-
-                // Calculate draw rect based on resize mode
-                let drawRect: CGRect
-                let imageSize = image.size
-
-                switch resizeMode {
-                case .aspectFill:
-                    let widthRatio = size.width / imageSize.width
-                    let heightRatio = size.height / imageSize.height
-                    let scale = max(widthRatio, heightRatio)
-                    let scaledWidth = imageSize.width * scale
-                    let scaledHeight = imageSize.height * scale
-                    let xOffset = (size.width - scaledWidth) / 2.0
-                    let yOffset = (size.height - scaledHeight) / 2.0
-                    drawRect = CGRect(x: xOffset, y: yOffset, width: scaledWidth, height: scaledHeight)
-
-                case .aspectFit:
-                    let widthRatio = size.width / imageSize.width
-                    let heightRatio = size.height / imageSize.height
-                    let scale = min(widthRatio, heightRatio)
-                    let scaledWidth = imageSize.width * scale
-                    let scaledHeight = imageSize.height * scale
-                    let xOffset = (size.width - scaledWidth) / 2.0
-                    let yOffset = (size.height - scaledHeight) / 2.0
-                    drawRect = CGRect(x: xOffset, y: yOffset, width: scaledWidth, height: scaledHeight)
-
-                case .stretch:
-                    drawRect = rect
-                }
-
-                image.draw(in: drawRect)
+            // Apply corner radius clipping if requested
+            if let cornerRadius = cornerRadius, cornerRadius > 0 {
+                let path = UIBezierPath(
+                    roundedRect: rect,
+                    cornerRadius: cornerRadius
+                )
+                path.addClip()
             }
-        }.value
+
+            // Calculate draw rect based on resize mode
+            let drawRect: CGRect
+            let imageSize = image.size
+
+            switch resizeMode {
+            case .aspectFill:
+                let widthRatio = size.width / imageSize.width
+                let heightRatio = size.height / imageSize.height
+                let scale = max(widthRatio, heightRatio)
+                let scaledWidth = imageSize.width * scale
+                let scaledHeight = imageSize.height * scale
+                let xOffset = (size.width - scaledWidth) / 2.0
+                let yOffset = (size.height - scaledHeight) / 2.0
+                drawRect = CGRect(x: xOffset, y: yOffset, width: scaledWidth, height: scaledHeight)
+
+            case .aspectFit:
+                let widthRatio = size.width / imageSize.width
+                let heightRatio = size.height / imageSize.height
+                let scale = min(widthRatio, heightRatio)
+                let scaledWidth = imageSize.width * scale
+                let scaledHeight = imageSize.height * scale
+                let xOffset = (size.width - scaledWidth) / 2.0
+                let yOffset = (size.height - scaledHeight) / 2.0
+                drawRect = CGRect(x: xOffset, y: yOffset, width: scaledWidth, height: scaledHeight)
+
+            case .stretch:
+                drawRect = rect
+            }
+
+            image.draw(in: drawRect)
+        }
     }
 
     /// Generates a cache key from the given parameters.
@@ -385,7 +385,6 @@ private actor ThumbnailTaskRegistry {
 
         // Create a new task and store it
         let task = Task<UIImage, Error> {
-            defer { Task { await self.removeTask(for: key) } }
             return try await operation()
         }
 
@@ -393,8 +392,10 @@ private actor ThumbnailTaskRegistry {
 
         do {
             let result = try await task.value
+            removeTask(for: key)
             return result
         } catch {
+            removeTask(for: key)
             throw error
         }
     }

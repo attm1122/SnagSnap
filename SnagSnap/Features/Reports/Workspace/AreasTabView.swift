@@ -15,7 +15,7 @@ struct AreasTabView: View {
     @Environment(\.modelContext) private var modelContext
 
     let report: InspectionReport
-    let viewModel: ReportWorkspaceViewModel
+    @Bindable var viewModel: ReportWorkspaceViewModel
 
     // MARK: - Local State
 

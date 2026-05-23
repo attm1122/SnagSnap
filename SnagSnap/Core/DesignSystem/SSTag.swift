@@ -10,6 +10,7 @@ enum SSTagVariant {
     case success
     case warning
     case error
+    case accent
 }
 
 // MARK: - SSTag
@@ -32,6 +33,10 @@ struct SSTag: View {
         self.text = text
         self.variant = variant
         self.icon = icon
+    }
+
+    init(text: String, style: SSTagVariant, icon: String? = nil) {
+        self.init(text, variant: style, icon: icon)
     }
 
     // MARK: - Body
@@ -68,6 +73,7 @@ struct SSTag: View {
         case .success:    return Theme.success
         case .warning:    return Theme.warning
         case .error:      return Theme.error
+        case .accent:     return Theme.accent
         }
     }
 

@@ -365,78 +365,6 @@ class FileStorageService {
         }
     }
 
-    // MARK: - Annotated Image Loading
-
-    /// Loads an annotated image from its stored filename.
-    ///
-    /// - Parameter path: The filename of the annotated image.
-    /// - Returns: The loaded `UIImage`, or `nil` if not found.
-    func loadAnnotatedImage(from path: String) -> UIImage? {
-        guard !path.isEmpty else { return nil }
-        let url = imagesDirectory.appendingPathComponent(path)
-        guard fileManager.fileExists(atPath: url.path) else { return nil }
-        guard let data = try? Data(contentsOf: url) else { return nil }
-        return UIImage(data: data)
-    }
-
-    // MARK: - PDF Loading
-
-    /// Loads a previously saved PDF from its filename.
-    ///
-    /// - Parameter filename: The filename of the saved PDF.
-    /// - Returns: The PDF data, or `nil` if not found.
-    func loadPDF(named filename: String) -> Data? {
-        guard !filename.isEmpty else { return nil }
-        let url = pdfsDirectory.appendingPathComponent(filename)
-        guard fileManager.fileExists(atPath: url.path) else { return nil }
-        return try? Data(contentsOf: url)
-    }
-
-    /// Checks whether a PDF file exists for the given filename.
-    ///
-    /// - Parameter filename: The PDF filename to check.
-    /// - Returns: `true` if the PDF file exists.
-    func pdfExists(named filename: String) -> Bool {
-        guard !filename.isEmpty else { return false }
-        let url = pdfsDirectory.appendingPathComponent(filename)
-        return fileManager.fileExists(atPath: url.path)
-    }
-
-    /// Deletes a PDF by its filename.
-    ///
-    /// - Parameter filename: The filename of the PDF to delete.
-    /// - Throws: `FileStorageError.deleteFailed` if deletion fails.
-    func deletePDF(named filename: String) throws {
-        let url = pdfsDirectory.appendingPathComponent(filename)
-        guard fileManager.fileExists(atPath: url.path) else { return }
-        do {
-            try fileManager.removeItem(at: url)
-        } catch {
-            throw FileStorageError.deleteFailed
-        }
-    }
-
-    /// Returns a human-readable file size string for a PDF.
-    ///
-    /// - Parameter filename: The PDF filename.
-    /// - Returns: A formatted size string like "1.2 MB".
-    func pdfFileSize(named filename: String) -> String? {
-        guard !filename.isEmpty else { return nil }
-        let url = pdfsDirectory.appendingPathComponent(filename)
-        guard fileManager.fileExists(atPath: url.path) else { return nil }
-        guard let attrs = try? fileManager.attributesOfItem(atPath: url.path),
-              let size = attrs[.size] as? Int64 else { return nil }
-        return ByteCountFormatter.string(fromByteCount: size, countStyle: .file)
-    }
-
-    /// Generates the standard PDF filename for a given report ID.
-    ///
-    /// - Parameter reportID: The UUID of the report.
-    /// - Returns: The standard PDF filename.
-    func pdfFilename(for reportID: UUID) -> String {
-        "report_\(reportID.uuidString).pdf"
-    }
-
     // MARK: - Public Methods - Thumbnail Generation
 
     /// Generates a thumbnail from a full-size image using aspect-fill scaling.
@@ -448,7 +376,6 @@ class FileStorageService {
     func generateThumbnail(from image: UIImage, size: CGSize = CGSize(width: 200, height: 200)) -> UIImage {
         let renderer = UIGraphicsImageRenderer(size: size)
         return renderer.image { _ in
-            let rect = CGRect(origin: .zero, size: size)
             // Aspect fill: scale to fill the entire rect
             let imageSize = image.size
             let widthRatio = size.width / imageSize.width

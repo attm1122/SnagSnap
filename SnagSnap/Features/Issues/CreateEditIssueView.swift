@@ -33,6 +33,7 @@ final class CreateEditIssueViewModel {
     var showPhotoAnnotation: Bool = false
     var photoToDelete: IssuePhoto?
     var showDeletePhotoConfirmation: Bool = false
+    var pendingPhotos: [IssuePhoto] = []
 
     // MARK: - Dependencies
 
@@ -60,7 +61,10 @@ final class CreateEditIssueViewModel {
     }
 
     var currentPhotos: [IssuePhoto] {
-        issue?.photos ?? []
+        if let issue {
+            return issue.photos ?? []
+        }
+        return pendingPhotos
     }
 
     // MARK: - Initialization
@@ -139,10 +143,11 @@ final class CreateEditIssueViewModel {
             newIssue.report = report
             newIssue.area = targetArea
 
-            if report.issues == nil {
-                report.issues = []
+            newIssue.photos = pendingPhotos
+            for photo in pendingPhotos {
+                photo.issue = newIssue
             }
-            report.issues?.append(newIssue)
+            report.issues = (report.issues ?? []) + [newIssue]
             targetArea.issues = (targetArea.issues ?? []) + [newIssue]
             report.updatedAt = Date()
         }
@@ -179,8 +184,7 @@ final class CreateEditIssueViewModel {
                     issue.photos = (issue.photos ?? []) + [newPhoto]
                     issue.updatedAt = Date()
                 } else {
-                    // Store temporarily — will be attached on save
-                    // For now, insert into context and we'll need to attach after issue creation
+                    pendingPhotos.append(newPhoto)
                 }
 
                 try modelContext.save()
@@ -213,6 +217,8 @@ final class CreateEditIssueViewModel {
                             issue.photos = (issue.photos ?? []) + [newPhoto]
                             issue.updatedAt = Date()
                             try modelContext.save()
+                        } else {
+                            pendingPhotos.append(newPhoto)
                         }
                     } catch {
                         print("Failed to save library photo: \(error)")
@@ -861,7 +867,7 @@ private struct PhotoGridCell: View {
     let report = container.sampleReport
     let area = report.areas!.first!
 
-    return CreateEditIssueView(report: report, area: area)
+    CreateEditIssueView(area: area, report: report)
         .modelContainer(container.container)
 }
 
@@ -887,4 +893,9 @@ private struct PreviewContainer {
 
         let kitchen = InspectionArea(name: "Kitchen", notes: "Main kitchen")
         context.insert(kitchen)
-        kitche
+        kitchen.report = sampleReport
+        sampleReport.areas = [kitchen]
+
+        try context.save()
+    }
+}

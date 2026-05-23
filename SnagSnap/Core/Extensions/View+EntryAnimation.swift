@@ -55,35 +55,6 @@ struct ScaleEntryAnimationModifier: ViewModifier {
     }
 }
 
-// MARK: - Animated Button Style
-
-extension ButtonStyle where Self == AnimatedButtonStyle {
-    /// A button style that applies press-scale animation and optional haptic feedback.
-    /// - Parameters:
-    ///   - scale: Scale factor when pressed (default 0.96).
-    ///   - haptic: Optional haptic feedback type on press.
-    static func animated(scale: CGFloat = 0.96, haptic: HapticType? = nil) -> AnimatedButtonStyle {
-        AnimatedButtonStyle(scale: scale, haptic: haptic)
-    }
-}
-
-/// A button style that combines scale animation with optional haptic feedback.
-struct AnimatedButtonStyle: ButtonStyle {
-    let scale: CGFloat
-    let haptic: HapticType?
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? scale : 1.0)
-            .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
-            .onChange(of: configuration.isPressed) { _, isPressed in
-                if isPressed, let haptic {
-                    HapticService.shared.play(haptic)
-                }
-            }
-    }
-}
-
 // MARK: - Animate On Appear
 
 extension View {

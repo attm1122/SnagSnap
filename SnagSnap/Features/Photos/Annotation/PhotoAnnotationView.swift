@@ -6,6 +6,7 @@
 import SwiftUI
 import PencilKit
 import UIKit
+import SwiftData
 
 // MARK: - PhotoAnnotationViewModel
 
@@ -249,22 +250,20 @@ struct PhotoAnnotationView: View {
                 let aspectRatio = image.size.width / image.size.height
                 let containerSize = geometry.size
 
-                let displaySize: CGSize
                 let containerAspect = containerSize.width / containerSize.height
-
-                if aspectRatio > containerAspect {
-                    // Image is wider than container
-                    displaySize = CGSize(
-                        width: containerSize.width,
-                        height: containerSize.width / aspectRatio
-                    )
-                } else {
-                    // Image is taller than container
-                    displaySize = CGSize(
-                        width: containerSize.height * aspectRatio,
-                        height: containerSize.height
-                    )
-                }
+                let displaySize: CGSize = {
+                    if aspectRatio > containerAspect {
+                        return CGSize(
+                            width: containerSize.width,
+                            height: containerSize.width / aspectRatio
+                        )
+                    } else {
+                        return CGSize(
+                            width: containerSize.height * aspectRatio,
+                            height: containerSize.height
+                        )
+                    }
+                }()
 
                 ZStack {
                     // Background
@@ -275,7 +274,7 @@ struct PhotoAnnotationView: View {
                         // Background image
                         Image(uiImage: image)
                             .resizable()
-                            .scaledToFit
+                            .scaledToFit()
                             .frame(width: displaySize.width, height: displaySize.height)
 
                         // PencilKit Canvas overlay
@@ -289,9 +288,18 @@ struct PhotoAnnotationView: View {
                                 get: { viewModel.isCanvasEmpty },
                                 set: { viewModel.isCanvasEmpty = $0 }
                             ),
-                            undoTrigger: $viewModel.undoTrigger,
-                            clearTrigger: $viewModel.clearTrigger,
-                            saveTrigger: $viewModel.saveTrigger,
+                            undoTrigger: Binding(
+                                get: { viewModel.undoTrigger },
+                                set: { viewModel.undoTrigger = $0 }
+                            ),
+                            clearTrigger: Binding(
+                                get: { viewModel.clearTrigger },
+                                set: { viewModel.clearTrigger = $0 }
+                            ),
+                            saveTrigger: Binding(
+                                get: { viewModel.saveTrigger },
+                                set: { viewModel.saveTrigger = $0 }
+                            ),
                             onSave: { annotatedImage in
                                 viewModel.handleAnnotatedImage(annotatedImage)
                             }
@@ -387,23 +395,6 @@ struct PhotoAnnotationView: View {
                 }
             }
 
-            Button {
-                updateTool(viewModel: viewModel, inkType: .eraser)
-            } label: {
-                HStack {
-                    Image(systemName: "eraser")
-                    Text("Eraser")
-                }
-            }
-
-            Button {
-                updateTool(viewModel: viewModel, inkType: .lasso)
-            } label: {
-                HStack {
-                    Image(systemName: "lasso")
-                    Text("Lasso Select")
-                }
-            }
         } label: {
             VStack(spacing: 4) {
                 Image(systemName: toolIcon(for: selectedInkType))
@@ -420,16 +411,18 @@ struct PhotoAnnotationView: View {
         case .pen: return "pencil"
         case .marker: return "highlighter"
         case .pencil: return "pencil.line"
-        case .eraser: return "eraser"
-        case .lasso: return "lasso"
+        case .monoline: return "pencil.tip"
+        case .fountainPen: return "pencil.tip.crop.circle"
+        case .watercolor: return "paintbrush"
+        case .crayon: return "paintbrush.pointed"
+        case .reed: return "paintbrush.pointed"
         @unknown default: return "pencil"
         }
     }
 
     private func updateTool(viewModel: PhotoAnnotationViewModel, inkType: PKInkingTool.InkType) {
         selectedInkType = inkType
-        let color = inkType == .eraser ? UIColor.clear : UIColor(selectedColor)
-        viewModel.selectedTool = PKInkingTool(inkType, color: color, width: selectedWidth)
+        viewModel.selectedTool = PKInkingTool(inkType, color: UIColor(selectedColor), width: selectedWidth)
     }
 
     // MARK: - Color Picker Menu
@@ -614,7 +607,7 @@ struct PhotoAnnotationView: View {
     let container = try! PreviewContainer()
     let photo = container.photo
 
-    return PhotoAnnotationView(photo: photo)
+    PhotoAnnotationView(photo: photo)
         .modelContainer(container.container)
 }
 

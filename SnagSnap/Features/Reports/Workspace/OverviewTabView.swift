@@ -182,7 +182,6 @@ struct OverviewTabView: View {
 
     private var severityBar: some View {
         let breakdown = viewModel.severityBreakdown(for: report)
-        let total = report.issueCount
 
         return GeometryReader { geometry in
             HStack(spacing: 0) {
@@ -242,7 +241,7 @@ struct OverviewTabView: View {
             icon: "square.and.arrow.up",
             isFullWidth: true
         ) {
-            viewModel.generatePDF(for: report)
+            viewModel.generatePDF(for: report, modelContext: modelContext)
         }
         .buttonStyle(.animated(haptic: .medium))
         .padding(.top, Theme.spacingS)
