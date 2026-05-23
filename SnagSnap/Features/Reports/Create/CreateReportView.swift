@@ -102,6 +102,9 @@ struct CreateReportView: View {
 
     @State private var viewModel: CreateReportViewModel?
     @State private var showPaywall = false
+    @State private var showToast = false
+    @State private var toastMessage = ""
+    @State private var shakeValidation = false
 
     // MARK: - Injected Dependencies
 
@@ -123,19 +126,24 @@ struct CreateReportView: View {
                 // Paywall banner (if applicable)
                 if !EntitlementManager.shared.canCreateNewReport() {
                     paywallSection
+                        .entryAnimation(delay: 0.0)
                 }
 
                 // Required fields
                 requiredFieldsSection
+                    .entryAnimation(delay: 0.05)
 
                 // Report type
                 reportTypeSection
+                    .entryAnimation(delay: 0.1)
 
                 // Optional fields
                 optionalFieldsSection
+                    .entryAnimation(delay: 0.15)
 
                 // Notes
                 notesSection
+                    .entryAnimation(delay: 0.2)
             }
             .navigationTitle("New Report")
             .navigationBarTitleDisplayMode(.large)
@@ -144,6 +152,7 @@ struct CreateReportView: View {
                     Button("Cancel") {
                         dismiss()
                     }
+                    .buttonStyle(.animated(haptic: .light))
                     .foregroundStyle(Theme.primary)
                 }
 
@@ -151,12 +160,21 @@ struct CreateReportView: View {
                     Button("Create") {
                         if let report = viewModel?.createReport() {
                             HapticService.shared.play(.success)
+                            toastMessage = "Report created"
+                            showToast = true
                             onComplete?(report)
                             dismiss()
                         } else {
-                            HapticService.shared.play(.error)
+                            HapticService.shared.play(.warning)
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.3)) {
+                                shakeValidation = true
+                            }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                                shakeValidation = false
+                            }
                         }
                     }
+                    .buttonStyle(.animated(haptic: .medium))
                     .disabled(!(viewModel?.canCreate ?? false) || !EntitlementManager.shared.canCreateNewReport())
                     .foregroundStyle(
                         (viewModel?.canCreate ?? false) && EntitlementManager.shared.canCreateNewReport()
@@ -165,6 +183,7 @@ struct CreateReportView: View {
                     )
                     .font(.body.weight(.semibold))
                     .accessibilityLabel("Create report")
+                    .offset(x: shakeValidation ? 10 : 0)
                 }
             }
             .onAppear {
@@ -180,6 +199,7 @@ struct CreateReportView: View {
                 )
             }
             .dismissKeyboardOnTap()
+            .toast(isPresented: $showToast, message: toastMessage, style: .success, duration: 2.0)
         }
     }
 
@@ -300,7 +320,11 @@ struct CreateReportView: View {
         Section("Report Type") {
             Picker("Type", selection: Binding(
                 get: { viewModel?.reportType ?? .general },
-                set: { viewModel?.reportType = $0 }
+                set: { newValue in
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        viewModel?.reportType = newValue
+                    }
+                }
             )) {
                 ForEach(ReportType.allCases) { type in
                     HStack(spacing: Theme.spacingS) {

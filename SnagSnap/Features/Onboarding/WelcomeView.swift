@@ -92,6 +92,7 @@ struct WelcomeView: View {
                         isFullWidth: true,
                         action: onGetStarted
                     )
+                    .buttonStyle(.animated(haptic: .medium))
 
                     // Page indicator
                     HStack(spacing: Theme.spacingS) {

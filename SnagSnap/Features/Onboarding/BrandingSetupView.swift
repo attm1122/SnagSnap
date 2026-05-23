@@ -124,6 +124,7 @@ struct BrandingSetupView: View {
                             onComplete()
                         }
                     )
+                    .buttonStyle(.animated(haptic: .medium))
                     .accessibilityLabel("Start first report")
 
                     // Page indicator

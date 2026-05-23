@@ -121,6 +121,8 @@ struct AddEditAreaView: View {
     // MARK: - Local State
 
     @State private var viewModel: AddEditAreaViewModel?
+    @State private var showToast = false
+    @State private var toastMessage = ""
 
     // MARK: - Initialization
 
@@ -150,9 +152,12 @@ struct AddEditAreaView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         HapticService.shared.play(.success)
+                        toastMessage = "Area saved"
+                        showToast = true
                         viewModel?.save()
                         dismiss()
                     }
+                    .buttonStyle(.animated(haptic: .medium))
                     .disabled(!(viewModel?.canSave ?? false))
                     .foregroundStyle(viewModel?.canSave ?? false ? Theme.primary : Theme.secondaryLabel)
                     .font(.body.weight(.semibold))
@@ -168,6 +173,7 @@ struct AddEditAreaView: View {
                 )
             }
             .dismissKeyboardOnTap()
+            .toast(isPresented: $showToast, message: toastMessage, style: .success, duration: 2.0)
         }
     }
 
@@ -202,14 +208,17 @@ struct AddEditAreaView: View {
         ]
 
         LazyVGrid(columns: columns, spacing: Theme.spacingS) {
-            ForEach(InspectionArea.suggestedNames, id: \.self) { suggestedName in
+            ForEach(Array(InspectionArea.suggestedNames.enumerated()), id: \.element) { index, suggestedName in
                 SuggestedNameChip(
                     name: suggestedName,
                     isSelected: (viewModel?.name ?? "") == suggestedName
                 ) {
-                    HapticService.shared.play(.selection)
-                    viewModel?.selectSuggestedName(suggestedName)
+                    HapticService.shared.play(.light)
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        viewModel?.selectSuggestedName(suggestedName)
+                    }
                 }
+                .scaleEntryAnimation(delay: Double(index) * 0.03)
             }
         }
         .padding(.top, Theme.spacingS)

@@ -11,6 +11,8 @@ struct PaywallView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
     @State private var showPurchaseSuccess = false
+    @State private var showRestoreToast = false
+    @State private var showErrorToast = false
 
     private let benefits = [
         "Unlimited property reports",
@@ -96,6 +98,7 @@ struct PaywallView: View {
                         .font(.system(size: 28))
                         .foregroundStyle(.secondary)
                 }
+                .buttonStyle(.animated(haptic: .light))
                 .accessibilityLabel("Close")
             }
 
@@ -132,7 +135,7 @@ struct PaywallView: View {
 
     private var benefitsView: some View {
         VStack(alignment: .leading, spacing: Theme.spacingM) {
-            ForEach(benefits, id: \.self) { benefit in
+            ForEach(Array(benefits.enumerated()), id: \.element) { index, benefit in
                 HStack(spacing: 12) {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 22, weight: .semibold))
@@ -144,6 +147,7 @@ struct PaywallView: View {
 
                     Spacer()
                 }
+                .entryAnimation(delay: Double(index) * 0.05)
             }
         }
         .padding(.horizontal, Theme.spacingL)
@@ -235,8 +239,10 @@ struct PaywallView: View {
                     isSelected: viewModel.selectedProduct?.id == annual.id,
                     isProcessing: viewModel.isPurchasing
                 ) {
-                    HapticService.shared.play(.medium)
-                    viewModel.selectProduct(annual)
+                    HapticService.shared.play(.selection)
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        viewModel.selectProduct(annual)
+                    }
                 }
             }
 
@@ -252,8 +258,10 @@ struct PaywallView: View {
                     isSelected: viewModel.selectedProduct?.id == monthly.id,
                     isProcessing: viewModel.isPurchasing
                 ) {
-                    HapticService.shared.play(.medium)
-                    viewModel.selectProduct(monthly)
+                    HapticService.shared.play(.selection)
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        viewModel.selectProduct(monthly)
+                    }
                 }
             }
 
@@ -409,18 +417,4 @@ private struct ProductCard: View {
                             )
                     )
                     .shadow(
-                        color: isSelected ? Theme.primary.opacity(0.12) : Color.clear,
-                        radius: isSelected ? 8 : 0
-                    )
-            )
-        }
-        .buttonStyle(.plain)
-        .disabled(isProcessing)
-    }
-}
-
-// MARK: - Preview
-
-#Preview {
-    PaywallView()
-}
+                        color: isSelected ? Theme.primary.opacity(0.12) : Color.cle

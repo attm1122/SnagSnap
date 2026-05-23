@@ -1,16 +1,16 @@
 // SnagSnap
 // ReportTabView.swift
 //
-// Report generation tab with export settings, PDF generation,
-// and sharing functionality.
+// Report generation tab with export settings, staged PDF generation,
+// success/error states, and intelligent sharing prompts.
 
 import SwiftUI
 import SwiftData
 
 // MARK: - ReportTabView
 
-/// Provides PDF export settings, generation controls, and sharing options
-/// for the inspection report.
+/// Provides PDF export settings, staged generation controls with progress,
+/// success/error states, and intelligent sharing options for the inspection report.
 struct ReportTabView: View {
 
     @Environment(\.modelContext) private var modelContext
@@ -18,47 +18,88 @@ struct ReportTabView: View {
 
     let report: InspectionReport
     let viewModel: ReportWorkspaceViewModel
-    @State private var showPDFGeneratedToast = false
+
     @State private var showRegenerateConfirm = false
+    @State private var showPDFPreview = false
+    @State private var previewPDFData: Data?
 
     // MARK: - Body
 
     var body: some View {
-        VStack(spacing: Theme.spacingL) {
-            // Summary card
-            summaryCard
+        ZStack {
+            // MARK: Normal Content
+            normalContent
+                .opacity(normalContentOpacity)
 
-            // PDF status section (if a PDF has been exported)
-            if report.hasExportedPDF {
-                pdfStatusSection
+            // MARK: Success State
+            if case .success(let data) = viewModel.pdfState {
+                SuccessStateView(
+                    title: "PDF Ready",
+                    message: "Your report has been generated and saved.",
+                    primaryAction: .init(
+                        title: "Share Report",
+                        icon: "square.and.arrow.up",
+                        handler: {
+                            viewModel.sharePDFData(data, reportTitle: report.title)
+                        }
+                    ),
+                    secondaryAction: .init(
+                        title: "Preview PDF",
+                        icon: "doc.text",
+                        handler: {
+                            previewPDFData = data
+                            showPDFPreview = true
+                        }
+                    ),
+                    tertiaryAction: .init(
+                        title: "Done",
+                        icon: nil,
+                        handler: {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                viewModel.resetPDFState()
+                            }
+                        }
+                    )
+                )
+                .transition(.opacity.combined(with: .scale(scale: 0.96)).animation(.easeInOut(duration: 0.35)))
+                .zIndex(1)
             }
 
-            // Export settings
-            exportSettingsSection
-
-            // PDF watermark notice for free users
-            if EntitlementManager.shared.shouldShowWatermark {
-                watermarkNotice
+            // MARK: Error State
+            if case .failed(let error) = viewModel.pdfState {
+                ErrorStateView(
+                    title: "Could not generate PDF",
+                    message: error.localizedDescription,
+                    retryAction: {
+                        HapticService.shared.play(.medium)
+                        viewModel.generatePDF(for: report, modelContext: modelContext)
+                    },
+                    dismissAction: {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            viewModel.resetPDFState()
+                        }
+                    }
+                )
+                .transition(.opacity.combined(with: .move(edge: .bottom)).animation(.easeInOut(duration: 0.35)))
+                .zIndex(1)
             }
-
-            // Generate / Share buttons
-            actionButtons
-
-            // Error display
-            if case .error(let message) = viewModel.pdfState {
-                errorView(message: message)
-            }
-
-            Spacer(minLength: 0)
         }
-        .padding(Theme.spacingM)
-        .onAppear {
-            viewModel.checkForExistingPDF(for: report)
-        }
-        .onChange(of: viewModel.pdfState) { _, newState in
-            if case .generated = newState {
-                HapticService.shared.play(.success)
+        .stagedLoadingOverlay(
+            isPresented: viewModel.pdfState.isGenerating,
+            stages: PDFGenerationStage.allLabels,
+            currentStage: viewModel.pdfState.currentStageIndex,
+            title: "Building your report..."
+        )
+        .alert("Report Changed", isPresented: $viewModel.showSharePrompt) {
+            Button("Re-generate First", role: .none) {
+                viewModel.generatePDF(for: report, modelContext: modelContext)
             }
+            Button("Share Existing", role: .none) {
+                viewModel.shareLatestPDF(for: report)
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("This report has changes since the last PDF export. Regenerate before sharing?")
         }
         .confirmationDialog(
             "Re-generate PDF?",
@@ -68,16 +109,70 @@ struct ReportTabView: View {
             Button("Re-generate", role: .destructive) {
                 HapticService.shared.play(.medium)
                 viewModel.resetPDFState()
+                // Small delay to let the state reset animate
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    viewModel.generatePDF(for: report, modelContext: modelContext)
+                }
             }
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("A PDF already exists. Re-generating will overwrite it.")
         }
-        .sheet(isPresented: $viewModel.showShareSheet) {
-            if let data = viewModel.pdfDataToShare {
-                ShareSheet(activityItems: [data])
+        .sheet(isPresented: $showPDFPreview) {
+            if let data = previewPDFData {
+                PDFPreviewView(report: report, pdfData: data)
             }
         }
+        .onAppear {
+            viewModel.checkForExistingPDF(for: report)
+        }
+    }
+
+    // MARK: - Normal Content Opacity
+
+    private var normalContentOpacity: Double {
+        switch viewModel.pdfState {
+        case .idle, .generating:
+            return 1.0
+        case .success, .failed:
+            return 0.0
+        }
+    }
+
+    // MARK: - Normal Content
+
+    private var normalContent: some View {
+        ScrollView {
+            VStack(spacing: Theme.spacingL) {
+                // Summary card
+                summaryCard
+                    .animateOnAppear(delay: 0, duration: 0.45)
+
+                // PDF status section (if a PDF has been exported)
+                if report.hasExportedPDF {
+                    pdfStatusSection
+                        .animateOnAppear(delay: 0.05, duration: 0.45)
+                }
+
+                // Export settings
+                exportSettingsSection
+                    .animateOnAppear(delay: 0.1, duration: 0.45)
+
+                // PDF watermark notice for free users
+                if EntitlementManager.shared.shouldShowWatermark {
+                    watermarkNotice
+                        .animateOnAppear(delay: 0.15, duration: 0.45)
+                }
+
+                // Generate / action buttons
+                actionButtons
+                    .animateOnAppear(delay: 0.2, duration: 0.45)
+
+                Spacer(minLength: Theme.spacingXXL)
+            }
+            .padding(Theme.spacingM)
+        }
+        .background(Theme.groupedBackground.ignoresSafeArea())
     }
 
     // MARK: - Summary Card
@@ -98,6 +193,7 @@ struct ReportTabView: View {
                         Text(report.summaryDescription)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
+                            .lineLimit(2)
                     }
 
                     Spacer()
@@ -161,24 +257,28 @@ struct ReportTabView: View {
 
                 HStack(spacing: Theme.spacingM) {
                     SSButton(
-                        "Re-generate PDF",
+                        "Share",
+                        style: .primary,
+                        icon: "square.and.arrow.up",
+                        isFullWidth: true
+                    ) {
+                        HapticService.shared.play(.medium)
+                        if viewModel.canShareWithoutRegenerating(report: report) {
+                            viewModel.shareLatestPDF(for: report)
+                        } else {
+                            viewModel.showSharePrompt = true
+                        }
+                    }
+                    .accessibilityLabel("Share PDF report")
+
+                    SSButton(
+                        "Re-generate",
                         style: .secondary,
                         icon: "arrow.clockwise",
                         isFullWidth: true
                     ) {
                         showRegenerateConfirm = true
                     }
-
-                    SSButton(
-                        "Share PDF",
-                        style: .primary,
-                        icon: "square.and.arrow.up",
-                        isFullWidth: true
-                    ) {
-                        HapticService.shared.play(.medium)
-                        viewModel.shareLatestPDF(for: report)
-                    }
-                    .accessibilityLabel("Share PDF report")
                 }
             }
         }
@@ -260,29 +360,8 @@ struct ReportTabView: View {
 
     private var actionButtons: some View {
         VStack(spacing: Theme.spacingM) {
-            if viewModel.canSharePDF {
-                // PDF was just generated in this session — show share + re-generate
-                SSButton(
-                    "Share PDF",
-                    style: .primary,
-                    icon: "square.and.arrow.up",
-                    isFullWidth: true
-                ) {
-                    HapticService.shared.play(.medium)
-                    viewModel.prepareShare()
-                }
-                .accessibilityLabel("Share PDF report")
-
-                SSButton(
-                    "Re-generate PDF Report",
-                    style: .secondary,
-                    icon: "arrow.clockwise",
-                    isFullWidth: true
-                ) {
-                    showRegenerateConfirm = true
-                }
-            } else if report.hasExportedPDF {
-                // PDF exists from a previous session — show re-generate primary
+            if report.hasExportedPDF {
+                // PDF exists from a previous session
                 SSButton(
                     "Re-generate PDF Report",
                     style: .secondary,
@@ -310,24 +389,6 @@ struct ReportTabView: View {
         }
     }
 
-    // MARK: - Error View
-
-    private func errorView(message: String) -> some View {
-        HStack(spacing: Theme.spacingS) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(Theme.error)
-
-            Text("PDF generation failed: \(message)")
-                .font(.subheadline)
-                .foregroundStyle(Theme.error)
-
-            Spacer()
-        }
-        .padding(Theme.spacingM)
-        .background(Theme.error.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous))
-    }
-
     // MARK: - Helper Views
 
     private func summaryItem(value: String, label: String) -> some View {
@@ -343,23 +404,6 @@ struct ReportTabView: View {
     }
 }
 
-// MARK: - Share Sheet
-
-/// UIKit share sheet wrapper for SwiftUI.
-private struct ShareSheet: UIViewControllerRepresentable {
-    let activityItems: [Any]
-    var applicationActivities: [UIActivity]? = nil
-
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(
-            activityItems: activityItems,
-            applicationActivities: applicationActivities
-        )
-    }
-
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
-}
-
 // MARK: - Preview
 
 #Preview("Report Tab") {
@@ -372,4 +416,42 @@ private struct ShareSheet: UIViewControllerRepresentable {
         title: "15 Oak Avenue - Move In",
         propertyName: "15 Oak Avenue",
         propertyAddress: "15 Oak Avenue, Manchester M1 1AA",
-        report
+        reportType: .moveIn,
+        clientName: "Sarah Johnson",
+        inspectorName: "Mike Thompson"
+    )
+    context.insert(report)
+
+    let kitchen = InspectionArea(name: "Kitchen")
+    context.insert(kitchen)
+    kitchen.report = report
+    report.areas = [kitchen]
+
+    let issue1 = InspectionIssue(
+        title: "Cracked tile near sink",
+        notes: "Visible crack in ceramic tile next to sink. Water may seep through.",
+        severity: .high,
+        status: .open
+    )
+    context.insert(issue1)
+    issue1.report = report
+    issue1.area = kitchen
+
+    let issue2 = InspectionIssue(
+        title: "Loose cabinet handle",
+        notes: "Handle on upper cabinet is loose and wobbles.",
+        severity: .low,
+        status: .fixed
+    )
+    context.insert(issue2)
+    issue2.report = report
+    issue2.area = kitchen
+
+    report.issues = [issue1, issue2]
+    try? context.save()
+
+    let viewModel = ReportWorkspaceViewModel()
+
+    return ReportTabView(report: report, viewModel: viewModel)
+        .modelContainer(container)
+}

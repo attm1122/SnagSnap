@@ -25,20 +25,25 @@ struct OverviewTabView: View {
         VStack(spacing: Theme.spacingL) {
             // Report details card
             reportDetailsCard
+                .animateOnAppear(delay: 0)
 
             // Property details card
             propertyDetailsCard
+                .animateOnAppear(delay: 0.05)
 
             // Stats grid
             statsGrid
+                .animateOnAppear(delay: 0.1)
 
             // Severity breakdown bar
             if (report.issues?.count ?? 0) > 0 {
                 severityBreakdownSection
+                    .animateOnAppear(delay: 0.2)
             }
 
             // Export button
             exportButton
+                .animateOnAppear(delay: 0.25)
         }
         .padding(Theme.spacingM)
     }
@@ -67,7 +72,26 @@ struct OverviewTabView: View {
 
                     Spacer()
 
-                    ReportStatusBadge(status: report.status)
+                    // Status change picker with haptic feedback
+                    Menu {
+                        Picker("Status", selection: Binding(
+                            get: { report.status },
+                            set: { newStatus in
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    report.status = newStatus
+                                    report.updatedAt = Date()
+                                }
+                                HapticService.shared.play(.selection)
+                                try? modelContext.save()
+                            }
+                        )) {
+                            ForEach(ReportStatus.allCases) { status in
+                                Label(status.displayName, systemImage: status.icon).tag(status)
+                            }
+                        }
+                    } label: {
+                        ReportStatusBadge(status: report.status)
+                    }
                 }
 
                 Divider()
@@ -120,34 +144,23 @@ struct OverviewTabView: View {
     // MARK: - Stats Grid
 
     private var statsGrid: some View {
-        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: Theme.spacingM) {
-            statCard(
-                icon: "square.grid.2x2",
-                iconColor: .blue,
-                value: "\(report.areaCount)",
-                label: "Areas"
-            )
+        let stats: [(icon: String, iconColor: Color, keyPath: KeyPath<InspectionReport, Int>, label: String)] = [
+            ("square.grid.2x2", .blue, \.areaCount, "Areas"),
+            ("exclamationmark.triangle.fill", .orange, \.issueCount, "Total Issues"),
+            ("circle.fill", .red, \.openIssueCount, "Open Issues"),
+            ("checkmark.circle.fill", .green, \.fixedIssueCount, "Fixed Issues")
+        ]
 
-            statCard(
-                icon: "exclamationmark.triangle.fill",
-                iconColor: .orange,
-                value: "\(report.issueCount)",
-                label: "Total Issues"
-            )
-
-            statCard(
-                icon: "circle.fill",
-                iconColor: .red,
-                value: "\(report.openIssueCount)",
-                label: "Open Issues"
-            )
-
-            statCard(
-                icon: "checkmark.circle.fill",
-                iconColor: .green,
-                value: "\(report.fixedIssueCount)",
-                label: "Fixed Issues"
-            )
+        return LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: Theme.spacingM) {
+            ForEach(Array(stats.enumerated()), id: \.offset) { index, stat in
+                statCard(
+                    icon: stat.icon,
+                    iconColor: stat.iconColor,
+                    value: "\(report[keyPath: stat.keyPath])",
+                    label: stat.label,
+                    delay: 0.1 + Double(index) * 0.04
+                )
+            }
         }
     }
 
@@ -208,6 +221,8 @@ struct OverviewTabView: View {
                     Text("\(item.count)")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.primary)
+                        .contentTransition(.numericText())
+                        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: item.count)
 
                     Text("(\(Int(item.percentage * 100))%)")
                         .font(.caption)
@@ -229,6 +244,7 @@ struct OverviewTabView: View {
         ) {
             viewModel.generatePDF(for: report)
         }
+        .buttonStyle(.animated(haptic: .medium))
         .padding(.top, Theme.spacingS)
     }
 
@@ -265,7 +281,7 @@ struct OverviewTabView: View {
         }
     }
 
-    private func statCard(icon: String, iconColor: Color, value: String, label: String) -> some View {
+    private func statCard(icon: String, iconColor: Color, value: String, label: String, delay: Double) -> some View {
         SSCard(padding: Theme.spacingM, cornerRadius: Theme.radiusMedium) {
             VStack(alignment: .leading, spacing: Theme.spacingS) {
                 HStack {
@@ -279,12 +295,15 @@ struct OverviewTabView: View {
                 Text(value)
                     .font(.title2.weight(.bold))
                     .foregroundStyle(.primary)
+                    .contentTransition(.numericText())
+                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: value)
 
                 Text(label)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
         }
+        .animateOnAppear(delay: delay, duration: 0.4)
     }
 }
 

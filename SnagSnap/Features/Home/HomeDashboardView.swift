@@ -22,6 +22,9 @@ struct HomeDashboardView: View {
     @State private var viewModel = HomeViewModel()
     @State private var router = AppRouter.shared
     @State private var showDeleteToast = false
+    @State private var toastMessage = ""
+    @State private var showToast = false
+    @State private var isRefreshing = false
 
     /// SwiftData query for all inspection reports, sorted by creation date (newest first).
     @Query(sort: \InspectionReport.createdAt, order: .reverse)
@@ -51,8 +54,13 @@ struct HomeDashboardView: View {
         .background(Theme.groupedBackground)
         .scrollContentBackground(.hidden)
         .refreshable {
+            isRefreshing = true
             viewModel.refresh()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                isRefreshing = false
+            }
         }
+        .sensoryFeedback(.impact, trigger: isRefreshing)
         .navigationTitle("SnagSnap")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
@@ -76,6 +84,7 @@ struct HomeDashboardView: View {
         .onAppear {
             viewModel.configure(with: modelContext)
         }
+        .toast(isPresented: $showToast, message: toastMessage, style: .success, duration: 2.0)
     }
 
     // MARK: - Header
@@ -108,6 +117,7 @@ struct HomeDashboardView: View {
             HapticService.shared.play(.success)
             router.navigateToCreateReport()
         }
+        .buttonStyle(.animated(haptic: .medium))
         .accessibilityLabel("Create new report")
         .padding(.horizontal, Theme.spacingM)
     }
@@ -141,6 +151,7 @@ struct HomeDashboardView: View {
                 NoReportsEmptyState {
                     router.navigateToCreateReport()
                 }
+                .scaleEntryAnimation(delay: 0.1)
                 .frame(minHeight: 400)
             } else {
                 // Search bar
@@ -206,9 +217,11 @@ struct HomeDashboardView: View {
             .frame(minHeight: 300)
         } else {
             LazyVStack(spacing: Theme.spacingM) {
-                ForEach(recent) { report in
+                ForEach(Array(recent.enumerated()), id: \.element.id) { index, report in
                     ReportCardView(report: report) { reportToDelete in
-                        HapticService.shared.play(.error)
+                        HapticService.shared.play(.success)
+                        toastMessage = "Report deleted"
+                        showToast = true
                         viewModel.deleteReport(reportToDelete)
                     }
                     .contentShape(Rectangle())
@@ -218,6 +231,7 @@ struct HomeDashboardView: View {
                     }
                     .accessibilityLabel("Report: \(report.title)")
                     .padding(.horizontal, Theme.spacingM)
+                    .entryAnimation(delay: 0.1 + Double(index) * 0.03)
                 }
             }
         }

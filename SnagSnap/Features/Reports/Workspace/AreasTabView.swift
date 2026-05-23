@@ -45,6 +45,7 @@ struct AreasTabView: View {
                 AddEditAreaView(area: area, report: report)
             }
         }
+        .animateOnAppear(delay: 0.05, duration: 0.4)
     }
 
     // MARK: - Add Area Button
@@ -58,6 +59,7 @@ struct AreasTabView: View {
         ) {
             viewModel.showAddAreaSheet = true
         }
+        .buttonStyle(.animated(haptic: .medium))
     }
 
     // MARK: - Areas List
@@ -68,12 +70,22 @@ struct AreasTabView: View {
                 AreaRow(area: area)
                     .contentShape(Rectangle())
                     .onTapGesture {
+                        HapticService.shared.play(.light)
                         selectedArea = area
                         showEditSheet = true
                     }
+                    .transition(
+                        .asymmetric(
+                            insertion: .scale.combined(with: .opacity),
+                            removal: .opacity
+                        )
+                    )
                     .swipeActions(edge: .trailing) {
                         Button(role: .destructive) {
-                            deleteArea(area)
+                            HapticService.shared.play(.medium)
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                deleteArea(area)
+                            }
                         } label: {
                             Label("Delete", systemImage: "trash")
                         }
@@ -87,7 +99,9 @@ struct AreasTabView: View {
                         }
 
                         Button(role: .destructive) {
-                            deleteArea(area)
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                deleteArea(area)
+                            }
                         } label: {
                             Label("Delete", systemImage: "trash")
                         }
@@ -108,12 +122,14 @@ struct AreasTabView: View {
                 viewModel.showAddAreaSheet = true
             }
         )
+        .scaleEntryAnimation(delay: 0.1)
         .padding(.top, Theme.spacingXXL)
     }
 
     // MARK: - Actions
 
     private func deleteArea(_ area: InspectionArea) {
+        HapticService.shared.play(.medium)
         if let issues = area.issues {
             for issue in issues {
                 report.issues?.removeAll { $0.id == issue.id }
@@ -130,6 +146,7 @@ struct AreasTabView: View {
 
 private struct AreaRow: View {
     let area: InspectionArea
+    @State private var isVisible = false
 
     var body: some View {
         SSCard(padding: Theme.spacingM, cornerRadius: Theme.radiusMedium) {
@@ -171,6 +188,16 @@ private struct AreaRow: View {
                     .foregroundStyle(.tertiary)
             }
         }
+        .opacity(isVisible ? 1 : 0)
+        .offset(y: isVisible ? 0 : 8)
+        .scaleEffect(isVisible ? 1.0 : 0.96)
+        .animation(.easeOut(duration: 0.35).delay(0.05), value: isVisible)
+        .onAppear {
+            isVisible = true
+        }
+        .onDisappear {
+            isVisible = false
+        }
     }
 
     private func issueCountBadge(count: Int) -> some View {
@@ -179,6 +206,8 @@ private struct AreaRow: View {
                 .font(.caption2)
             Text("\(count)")
                 .font(.caption.weight(.medium))
+                .contentTransition(.numericText())
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: count)
         }
         .foregroundStyle(count > 0 ? Theme.warning : .secondary)
         .padding(.horizontal, 8)
@@ -195,6 +224,8 @@ private struct AreaRow: View {
                 .font(.caption2)
             Text("\(count)")
                 .font(.caption.weight(.medium))
+                .contentTransition(.numericText())
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: count)
         }
         .foregroundStyle(.secondary)
         .padding(.horizontal, 8)

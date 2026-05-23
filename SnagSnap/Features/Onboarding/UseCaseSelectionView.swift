@@ -78,7 +78,10 @@ struct UseCaseSelectionView: View {
                                 option: option,
                                 isSelected: viewModel.selectedUseCases.contains(option.rawValue)
                             ) {
-                                viewModel.toggleUseCase(option.rawValue)
+                                HapticService.shared.play(.light)
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    viewModel.toggleUseCase(option.rawValue)
+                                }
                             }
                         }
                     }
@@ -96,6 +99,7 @@ struct UseCaseSelectionView: View {
                         isFullWidth: true,
                         action: onContinue
                     )
+                    .buttonStyle(.animated(haptic: .medium))
 
                     // Page indicator
                     HStack(spacing: Theme.spacingS) {
@@ -166,9 +170,9 @@ private struct UseCaseCard: View {
                     )
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.animated(haptic: .light))
         .scaleEffect(isSelected ? 1.02 : 1.0)
-        .animation(.easeInOut(duration: 0.2), value: isSelected)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
     }
 }
 

@@ -69,6 +69,7 @@ struct StatsSummaryView: View {
                     value: stats.totalReports,
                     label: "Reports"
                 )
+                .entryAnimation(delay: 0.0)
 
                 StatCard(
                     icon: "exclamationmark.triangle.fill",
@@ -76,6 +77,7 @@ struct StatsSummaryView: View {
                     value: stats.openIssues,
                     label: "Open Issues"
                 )
+                .entryAnimation(delay: 0.05)
 
                 StatCard(
                     icon: "checkmark.circle.fill",
@@ -83,6 +85,7 @@ struct StatsSummaryView: View {
                     value: stats.completedCount,
                     label: "Completed"
                 )
+                .entryAnimation(delay: 0.1)
             }
             .padding(.horizontal, Theme.spacingM)
         }

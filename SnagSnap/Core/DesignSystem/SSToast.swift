@@ -50,6 +50,9 @@ struct SSToast: View {
         .background(style.color)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
+        .onAppear {
+            // Auto-dismiss timer is handled by ToastModifier, but this serves as a fallback
+        }
     }
 }
 

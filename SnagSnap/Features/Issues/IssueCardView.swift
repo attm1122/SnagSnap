@@ -15,6 +15,7 @@ struct IssueCardView: View {
     // MARK: - Properties
 
     let issue: InspectionIssue
+    var onTap: (() -> Void)?
 
     // MARK: - Computed Properties
 
@@ -37,6 +38,20 @@ struct IssueCardView: View {
     // MARK: - Body
 
     var body: some View {
+        Button {
+            HapticService.shared.play(.light)
+            onTap?()
+        } label: {
+            cardContent
+        }
+        .buttonStyle(.animated(haptic: .light))
+        .animation(.easeInOut(duration: 0.2), value: issue.severity)
+        .animation(.easeInOut(duration: 0.2), value: issue.status)
+    }
+
+    // MARK: - Card Content
+
+    private var cardContent: some View {
         SSCard(
             padding: Theme.spacingM,
             cornerRadius: Theme.radiusMedium,
@@ -51,6 +66,7 @@ struct IssueCardView: View {
                 }
                 if issue.hasPhotos {
                     photoThumbnailRow
+                        .scaleEntryAnimation(delay: 0.05)
                 }
             }
         }
@@ -89,7 +105,10 @@ struct IssueCardView: View {
     private var metadataRow: some View {
         HStack(spacing: Theme.spacingS) {
             SeverityIndicator(severity: issue.severity)
+                .animation(.easeInOut(duration: 0.2), value: issue.severity)
+
             IssueStatusBadge(status: issue.status)
+                .animation(.easeInOut(duration: 0.15), value: issue.status)
 
             if issue.hasPhotos {
                 photoCountIndicator
@@ -112,7 +131,6 @@ struct IssueCardView: View {
         let includedCount = (issue.photos ?? []).filter(\.includeInReport).count
         let totalCount = issue.photoCount
         let iconName = totalCount == 1 ? "photo" : "photo.stack"
-        let text = totalCount == 1 ? "1 photo" : "\(totalCount) photos"
 
         return HStack(spacing: 2) {
             Image(systemName: iconName)
@@ -120,9 +138,13 @@ struct IssueCardView: View {
             if includedCount < totalCount {
                 Text("\(includedCount)/\(totalCount)")
                     .font(.caption2.weight(.medium))
+                    .contentTransition(.numericText())
+                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: includedCount)
             } else {
                 Text("\(totalCount)")
                     .font(.caption2.weight(.medium))
+                    .contentTransition(.numericText())
+                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: totalCount)
             }
         }
         .foregroundStyle(.secondary)

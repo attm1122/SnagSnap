@@ -1,7 +1,8 @@
 // SnagSnap
 // PDFPreviewView.swift
 //
-// PDF preview using PDFKit with share functionality and dismiss support.
+// PDF preview using PDFKit with share functionality, dismiss support,
+// error states, and entry animations.
 
 import SwiftUI
 import SwiftData
@@ -10,7 +11,8 @@ import PDFKit
 // MARK: - PDFPreviewView
 
 /// Displays a generated PDF report using PDFKit's native PDFView,
-/// with toolbar controls for sharing and dismissal.
+/// with toolbar controls for sharing (via ``ShareService``), dismissal,
+/// error handling, and entry animations.
 struct PDFPreviewView: View {
 
     @Environment(\.modelContext) private var modelContext
@@ -20,6 +22,7 @@ struct PDFPreviewView: View {
     // MARK: - Properties
 
     let report: InspectionReport
+    let pdfData: Data?
 
     // MARK: - Local State
 
@@ -28,6 +31,18 @@ struct PDFPreviewView: View {
     @State private var errorMessage: String?
     @State private var showShareSheet = false
     @State private var pdfDataToShare: Data?
+    @State private var hasAppeared = false
+
+    // MARK: - Initializer
+
+    /// Creates a new ``PDFPreviewView``.
+    /// - Parameters:
+    ///   - report: The inspection report being previewed.
+    ///   - pdfData: Optional pre-existing PDF data. If nil, the view will generate a new PDF.
+    init(report: InspectionReport, pdfData: Data? = nil) {
+        self.report = report
+        self.pdfData = pdfData
+    }
 
     // MARK: - Body
 
@@ -37,11 +52,25 @@ struct PDFPreviewView: View {
                 Theme.groupedBackground.ignoresSafeArea()
 
                 if isGenerating {
-                    loadingView
+                    generatingView
                 } else if let errorMessage = errorMessage {
-                    errorView(message: errorMessage)
+                    ErrorStateView(
+                        title: "Preview Unavailable",
+                        message: errorMessage,
+                        retryAction: {
+                            errorMessage = nil
+                            isGenerating = true
+                            generatePreview()
+                        },
+                        dismissAction: {
+                            dismiss()
+                        }
+                    )
+                    .animateOnAppear(delay: 0, duration: 0.45)
                 } else if let pdfDocument = pdfDocument {
                     pdfKitView(document: pdfDocument)
+                        .opacity(hasAppeared ? 1 : 0)
+                        .offset(y: hasAppeared ? 0 : 20)
                 } else {
                     emptyView
                 }
@@ -57,34 +86,41 @@ struct PDFPreviewView: View {
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
-                    HStack(spacing: Theme.spacingM) {
-                        if pdfDocument != nil {
-                            Button {
-                                pdfDataToShare = pdfDocument?.dataRepresentation()
-                                showShareSheet = true
-                            } label: {
-                                Image(systemName: "square.and.arrow.up")
-                                    .font(.body.weight(.medium))
-                            }
-                            .foregroundStyle(Theme.primary)
+                    if pdfDocument != nil {
+                        Button {
+                            sharePDF()
+                        } label: {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.body.weight(.medium))
                         }
+                        .foregroundStyle(Theme.primary)
                     }
                 }
             }
-            .sheet(isPresented: $showShareSheet) {
-                if let data = pdfDataToShare {
-                    ShareSheet(activityItems: [data])
-                }
-            }
             .onAppear {
-                generatePreview()
+                if let pdfData = pdfData {
+                    // Use pre-existing PDF data
+                    if let document = PDFDocument(data: pdfData) {
+                        self.pdfDocument = document
+                        self.pdfDataToShare = pdfData
+                        self.isGenerating = false
+                        withAnimation(.easeOut(duration: 0.4)) {
+                            hasAppeared = true
+                        }
+                    } else {
+                        self.errorMessage = "The PDF data could not be loaded."
+                        self.isGenerating = false
+                    }
+                } else {
+                    generatePreview()
+                }
             }
         }
     }
 
-    // MARK: - Loading View
+    // MARK: - Generating View
 
-    private var loadingView: some View {
+    private var generatingView: some View {
         VStack(spacing: Theme.spacingL) {
             Spacer()
 
@@ -93,7 +129,7 @@ struct PDFPreviewView: View {
                 .progressViewStyle(CircularProgressViewStyle(tint: Theme.primary))
 
             VStack(spacing: Theme.spacingS) {
-                Text("Generating PDF…")
+                Text("Loading PDF...")
                     .font(.headline)
                     .foregroundStyle(.primary)
 
@@ -101,43 +137,6 @@ struct PDFPreviewView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
-
-            Spacer()
-        }
-    }
-
-    // MARK: - Error View
-
-    private func errorView(message: String) -> some View {
-        VStack(spacing: Theme.spacingL) {
-            Spacer()
-
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 56))
-                .foregroundStyle(Theme.warning)
-
-            VStack(spacing: Theme.spacingS) {
-                Text("Preview Unavailable")
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-
-                Text(message)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, Theme.spacingXL)
-            }
-
-            SSButton(
-                "Try Again",
-                style: .primary,
-                icon: "arrow.clockwise"
-            ) {
-                errorMessage = nil
-                isGenerating = true
-                generatePreview()
-            }
-            .padding(.top, Theme.spacingM)
 
             Spacer()
         }
@@ -193,6 +192,9 @@ struct PDFPreviewView: View {
                     self.pdfDocument = document
                     self.pdfDataToShare = document.dataRepresentation()
                     self.isGenerating = false
+                    withAnimation(.easeOut(duration: 0.4)) {
+                        hasAppeared = true
+                    }
                 }
             } catch {
                 await MainActor.run {
@@ -201,6 +203,19 @@ struct PDFPreviewView: View {
                 }
             }
         }
+    }
+
+    // MARK: - Share
+
+    private func sharePDF() {
+        guard let data = pdfDataToShare ?? pdfDocument?.dataRepresentation() else { return }
+        HapticService.shared.play(.light)
+
+        // Update the last exported timestamp
+        report.lastExportedAt = Date()
+        try? modelContext.save()
+
+        ShareService.shared.sharePDF(data, reportTitle: report.title)
     }
 
     // MARK: - Helpers
@@ -234,23 +249,6 @@ private struct PDFKitView: UIViewRepresentable {
     }
 }
 
-// MARK: - Share Sheet
-
-/// UIKit share sheet wrapper for sharing PDF data.
-private struct ShareSheet: UIViewControllerRepresentable {
-    let activityItems: [Any]
-    var applicationActivities: [UIActivity]? = nil
-
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(
-            activityItems: activityItems,
-            applicationActivities: applicationActivities
-        )
-    }
-
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
-}
-
 // MARK: - Preview
 
 #Preview("PDF Preview") {
@@ -274,7 +272,12 @@ private struct ShareSheet: UIViewControllerRepresentable {
     kitchen.report = report
     report.areas = [kitchen]
 
-    let issue1 = InspectionIssue(title: "Cracked tile near sink", notes: "Visible crack in ceramic tile next to sink. Water may seep through.", severity: .high, status: .open)
+    let issue1 = InspectionIssue(
+        title: "Cracked tile near sink",
+        notes: "Visible crack in ceramic tile next to sink. Water may seep through.",
+        severity: .high,
+        status: .open
+    )
     context.insert(issue1)
     issue1.report = report
     issue1.area = kitchen

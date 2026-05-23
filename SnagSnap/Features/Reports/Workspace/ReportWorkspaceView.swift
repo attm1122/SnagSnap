@@ -35,22 +35,28 @@ struct ReportWorkspaceView: View {
             .pickerStyle(.segmented)
             .padding(.horizontal, Theme.spacingM)
             .padding(.top, Theme.spacingS)
+            .onChange(of: viewModel.selectedTab) { _, _ in
+                HapticService.shared.play(.selection)
+            }
 
             // Tab content
             ScrollView {
-                switch viewModel.selectedTab {
-                case .overview:
-                    OverviewTabView(report: report, viewModel: viewModel)
+                Group {
+                    switch viewModel.selectedTab {
+                    case .overview:
+                        OverviewTabView(report: report, viewModel: viewModel)
 
-                case .areas:
-                    AreasTabView(report: report, viewModel: viewModel)
+                    case .areas:
+                        AreasTabView(report: report, viewModel: viewModel)
 
-                case .issues:
-                    IssuesTabView(report: report, viewModel: viewModel)
+                    case .issues:
+                        IssuesTabView(report: report, viewModel: viewModel)
 
-                case .report:
-                    ReportTabView(report: report, viewModel: viewModel)
+                    case .report:
+                        ReportTabView(report: report, viewModel: viewModel)
+                    }
                 }
+                .animation(.easeInOut(duration: 0.2), value: viewModel.selectedTab)
             }
             .scrollIndicators(.hidden)
         }
@@ -84,6 +90,7 @@ struct ReportWorkspaceView: View {
         .sheet(isPresented: $viewModel.showAddAreaSheet) {
             AddEditAreaView(report: report)
         }
+        .animateOnAppear(delay: 0.05, duration: 0.4)
     }
 
     // MARK: - Actions

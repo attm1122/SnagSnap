@@ -290,6 +290,8 @@ struct CreateEditIssueView: View {
     @State private var showImageViewer: Bool = false
     @State private var viewerShowAnnotated: Bool = false
     @State private var photoInclusionStates: [UUID: Bool] = [:]
+    @State private var showToast = false
+    @State private var toastMessage = ""
 
     // MARK: - Injected Dependencies
 
@@ -318,11 +320,17 @@ struct CreateEditIssueView: View {
         NavigationStack {
             Form {
                 titleSection
+                    .entryAnimation(delay: 0.0)
                 areaSection
+                    .entryAnimation(delay: 0.05)
                 severitySection
+                    .entryAnimation(delay: 0.1)
                 statusSection
+                    .entryAnimation(delay: 0.15)
                 notesSection
+                    .entryAnimation(delay: 0.2)
                 photosSection
+                    .entryAnimation(delay: 0.25)
             }
             .navigationTitle(viewModel?.navigationTitle ?? "Issue")
             .navigationBarTitleDisplayMode(.large)
@@ -337,9 +345,12 @@ struct CreateEditIssueView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         HapticService.shared.play(.success)
+                        toastMessage = "Issue saved"
+                        showToast = true
                         viewModel?.save()
                         dismiss()
                     }
+                    .buttonStyle(.animated(haptic: .medium))
                     .disabled(!(viewModel?.canSave ?? false))
                     .foregroundStyle(viewModel?.canSave ?? false ? Theme.primary : Theme.secondaryLabel)
                     .font(.body.weight(.semibold))
@@ -379,6 +390,7 @@ struct CreateEditIssueView: View {
                 Text("This photo will be permanently deleted. This action cannot be undone.")
             }
             .dismissKeyboardOnTap()
+            .toast(isPresented: $showToast, message: toastMessage, style: .success, duration: 2.0)
             .onAppear {
                 let ctx = injectedModelContext ?? modelContext
                 viewModel = CreateEditIssueViewModel(
@@ -458,7 +470,9 @@ struct CreateEditIssueView: View {
                         isSelected: (viewModel?.severity ?? .medium) == sev
                     ) {
                         HapticService.shared.play(.light)
-                        viewModel?.severity = sev
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            viewModel?.severity = sev
+                        }
                     }
                 }
             }
@@ -472,7 +486,11 @@ struct CreateEditIssueView: View {
         Section("Status") {
             Picker("Status", selection: Binding(
                 get: { viewModel?.status ?? .open },
-                set: { viewModel?.status = $0 }
+                set: { newValue in
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        viewModel?.status = newValue
+                    }
+                }
             )) {
                 ForEach(IssueStatus.allCases, id: \.self) { status in
                     HStack(spacing: Theme.spacingXS) {
@@ -571,7 +589,7 @@ struct CreateEditIssueView: View {
 
     private func photoGrid(_ photos: [IssuePhoto]) -> some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 80, maximum: 100), spacing: Theme.spacingS)], spacing: Theme.spacingS) {
-            ForEach(photos, id: \.id) { photo in
+            ForEach(Array(photos.enumerated()), id: \.element.id) { index, photo in
                 PhotoGridCell(
                     photo: photo,
                     onToggleInclusion: { togglePhotoInclusion(photo) },
@@ -579,6 +597,7 @@ struct CreateEditIssueView: View {
                     onAnnotate: { viewModel?.annotatePhoto(photo) },
                     onDelete: { viewModel?.requestDeletePhoto(photo) }
                 )
+                .scaleEntryAnimation(delay: Double(index) * 0.05)
             }
         }
     }
@@ -586,9 +605,11 @@ struct CreateEditIssueView: View {
     // MARK: - Photo Inclusion Toggle
 
     private func togglePhotoInclusion(_ photo: IssuePhoto) {
-        photo.includeInReport.toggle()
-        photo.updatedAt = Date()
-        photoInclusionStates[photo.id] = photo.includeInReport
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            photo.includeInReport.toggle()
+            photo.updatedAt = Date()
+            photoInclusionStates[photo.id] = photo.includeInReport
+        }
         HapticService.shared.play(.light)
 
         // Save context
@@ -613,6 +634,7 @@ struct CreateEditIssueView: View {
     private var cameraSheet: some View {
         if let vm = viewModel {
             CameraCaptureView { image in
+                HapticService.shared.play(.medium)
                 vm.addCapturedPhoto(image: image)
                 vm.isShowingCamera = false
             } onCancel: {
@@ -865,9 +887,4 @@ private struct PreviewContainer {
 
         let kitchen = InspectionArea(name: "Kitchen", notes: "Main kitchen")
         context.insert(kitchen)
-        kitchen.report = sampleReport
-        sampleReport.areas = [kitchen]
-
-        try context.save()
-    }
-}
+        kitche

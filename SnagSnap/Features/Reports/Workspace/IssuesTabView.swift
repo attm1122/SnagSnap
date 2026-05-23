@@ -42,6 +42,7 @@ struct IssuesTabView: View {
             }
         }
         .padding(.top, Theme.spacingS)
+        .animateOnAppear(delay: 0.05, duration: 0.4)
     }
 
     // MARK: - Filter & Sort Bar
@@ -50,7 +51,7 @@ struct IssuesTabView: View {
         HStack(spacing: Theme.spacingS) {
             // Filter picker
             Menu {
-                Picker("Filter", selection: $viewModel.issueFilter) {
+                Picker("Filter", selection: animatedFilterBinding) {
                     ForEach(IssueFilter.allCases) { filter in
                         Text(filter.rawValue).tag(filter)
                     }
@@ -68,10 +69,11 @@ struct IssuesTabView: View {
                 .background(Theme.primary.opacity(0.1))
                 .clipShape(RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous))
             }
+            .buttonStyle(.animated(haptic: .light))
 
             // Sort picker
             Menu {
-                Picker("Sort", selection: $viewModel.issueSort) {
+                Picker("Sort", selection: animatedSortBinding) {
                     ForEach(IssueSort.allCases) { sort in
                         Text(sort.rawValue).tag(sort)
                     }
@@ -89,15 +91,58 @@ struct IssuesTabView: View {
                 .background(Color.gray.opacity(0.1))
                 .clipShape(RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous))
             }
+            .buttonStyle(.animated(haptic: .light))
 
             Spacer()
+
+            // Add Issue button
+            Button {
+                if let firstArea = report.areas?.first {
+                    router.navigateToIssueEditor(issue: nil, area: firstArea, report: report)
+                } else {
+                    viewModel.showAddAreaSheet = true
+                }
+            } label: {
+                Image(systemName: "plus.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(Theme.primary)
+            }
+            .buttonStyle(.animated(haptic: .medium))
 
             // Issue count badge
             let issues = viewModel.sortedAndFilteredIssues(from: report)
             Text("\(issues.count) issue\(issues.count == 1 ? "" : "s")")
                 .font(.caption.weight(.medium))
                 .foregroundStyle(.secondary)
+                .contentTransition(.numericText())
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: issues.count)
         }
+    }
+
+    /// Animated binding for filter that wraps changes in withAnimation and plays haptic.
+    private var animatedFilterBinding: Binding<IssueFilter> {
+        Binding(
+            get: { viewModel.issueFilter },
+            set: { newValue in
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                    viewModel.issueFilter = newValue
+                }
+                HapticService.shared.play(.selection)
+            }
+        )
+    }
+
+    /// Animated binding for sort that wraps changes in withAnimation and plays haptic.
+    private var animatedSortBinding: Binding<IssueSort> {
+        Binding(
+            get: { viewModel.issueSort },
+            set: { newValue in
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                    viewModel.issueSort = newValue
+                }
+                HapticService.shared.play(.selection)
+            }
+        )
     }
 
     // MARK: - Issues List
@@ -105,12 +150,17 @@ struct IssuesTabView: View {
     private func issuesList(issues: [InspectionIssue]) -> some View {
         LazyVStack(spacing: Theme.spacingM) {
             ForEach(issues) { issue in
-                Button {
+                IssueCardView(issue: issue) {
                     router.navigateToIssueEditor(issue: issue, area: issue.area, report: report)
-                } label: {
-                    IssueCardView(issue: issue)
                 }
-                .buttonStyle(.plain)
+                .transition(
+                    .asymmetric(
+                        insertion: .scale
+                            .combined(with: .opacity)
+                            .animation(.spring(response: 0.35, dampingFraction: 0.8)),
+                        removal: .opacity
+                    )
+                )
                 .contextMenu {
                     Button {
                         router.navigateToIssueEditor(issue: issue, area: issue.area, report: report)
@@ -120,14 +170,28 @@ struct IssuesTabView: View {
 
                     if !issue.isResolved {
                         Button {
-                            markIssueFixed(issue)
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                markIssueFixed(issue)
+                            }
                         } label: {
                             Label("Mark Fixed", systemImage: "checkmark.circle")
                         }
                     }
 
                     Button(role: .destructive) {
-                        deleteIssue(issue)
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            deleteIssue(issue)
+                        }
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                }
+                .swipeActions(edge: .trailing) {
+                    Button(role: .destructive) {
+                        HapticService.shared.play(.medium)
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            deleteIssue(issue)
+                        }
                     } label: {
                         Label("Delete", systemImage: "trash")
                     }
@@ -148,7 +212,10 @@ struct IssuesTabView: View {
                     message: "No issues match the current filter. Try changing the filter to see all issues.",
                     buttonTitle: "Show All",
                     buttonAction: {
-                        viewModel.issueFilter = .all
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            viewModel.issueFilter = .all
+                        }
+                        HapticService.shared.play(.selection)
                     }
                 )
             } else {
@@ -168,6 +235,7 @@ struct IssuesTabView: View {
                 )
             }
         }
+        .scaleEntryAnimation(delay: 0.1)
         .padding(.top, Theme.spacingXXL)
     }
 
@@ -181,6 +249,7 @@ struct IssuesTabView: View {
     }
 
     private func deleteIssue(_ issue: InspectionIssue) {
+        HapticService.shared.play(.medium)
         report.issues?.removeAll { $0.id == issue.id }
         report.updatedAt = Date()
         modelContext.delete(issue)
