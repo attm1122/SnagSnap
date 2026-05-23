@@ -49,6 +49,12 @@ class InspectionReport {
     /// Raw string value of the `ReportStatus` (used for SwiftData persistence).
     var statusRaw: String
 
+    /// Path to the last generated PDF file (filename only, relative to PDFs directory).
+    var latestPDFPath: String?
+
+    /// When the PDF was last generated/exported.
+    var lastExportedAt: Date?
+
     // MARK: - Relationships
 
     /// All inspection areas within this report. Deleting a report cascades to delete its areas.
@@ -189,5 +195,16 @@ class InspectionReport {
         let areaLabel = areaCount == 1 ? "1 area" : "\(areaCount) areas"
         let issueLabel = issueCount == 1 ? "1 issue" : "\(issueCount) issues"
         return "\(typeLabel) \u{2022} \(dateLabel) \u{2022} \(areaLabel), \(issueLabel)"
+    }
+
+    /// Whether this report has a previously exported PDF.
+    var hasExportedPDF: Bool { latestPDFPath != nil }
+
+    /// A user-friendly string showing when the PDF was last exported.
+    var lastExportedDisplay: String? {
+        guard let date = lastExportedAt else { return nil }
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .full
+        return formatter.localizedString(for: date, relativeTo: Date())
     }
 }

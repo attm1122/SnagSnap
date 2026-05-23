@@ -28,6 +28,9 @@ class IssuePhoto {
     /// Optional user-provided caption or description of the photo.
     var caption: String?
 
+    /// Whether this photo should be included in the generated PDF report.
+    var includeInReport: Bool
+
     /// Timestamp when the photo was captured / added.
     var createdAt: Date
 
@@ -48,17 +51,20 @@ class IssuePhoto {
     ///   - thumbnailImagePath: Path to the thumbnail image.
     ///   - annotatedImagePath: Optional path to an annotated version.
     ///   - caption: Optional caption describing the photo.
+    ///   - includeInReport: Whether to include this photo in the PDF; defaults to `true`.
     init(
         originalImagePath: String,
         thumbnailImagePath: String,
         annotatedImagePath: String? = nil,
-        caption: String? = nil
+        caption: String? = nil,
+        includeInReport: Bool = true
     ) {
         self.id = UUID()
         self.originalImagePath = originalImagePath
         self.thumbnailImagePath = thumbnailImagePath
         self.annotatedImagePath = annotatedImagePath
         self.caption = caption
+        self.includeInReport = includeInReport
         self.createdAt = Date()
         self.updatedAt = Date()
     }
