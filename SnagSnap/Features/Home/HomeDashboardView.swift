@@ -34,7 +34,7 @@ struct HomeDashboardView: View {
 
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: Theme.spacingL, pinnedViews: []) {
+            LazyVStack(spacing: reports.isEmpty ? Theme.spacingXL : Theme.spacingL, pinnedViews: []) {
                 // MARK: Header
                 headerView
 
@@ -44,12 +44,15 @@ struct HomeDashboardView: View {
                 }
 
                 // MARK: Primary CTA
-                newReportButton
+                if !reports.isEmpty {
+                    newReportButton
+                }
 
                 // MARK: Recent Reports Section
                 recentReportsSection
             }
-            .padding(.vertical, Theme.spacingM)
+            .padding(.top, Theme.spacingXL)
+            .padding(.bottom, Theme.spacingXXL)
         }
         .background(Theme.groupedBackground)
         .scrollContentBackground(.hidden)
@@ -61,21 +64,8 @@ struct HomeDashboardView: View {
             }
         }
         .sensoryFeedback(.impact, trigger: isRefreshing)
-        .navigationTitle("SnagSnap")
-        .navigationBarTitleDisplayMode(.large)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button(action: {
-                    HapticService.shared.play(.medium)
-                    router.navigateToCreateReport()
-                }) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(Theme.primary)
-                }
-                .accessibilityLabel("Create new report")
-            }
-        }
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
         .alert("Error", isPresented: $viewModel.showError) {
             Button("OK") { viewModel.clearError() }
         } message: {
@@ -91,14 +81,33 @@ struct HomeDashboardView: View {
 
     /// The app header with title and subtitle.
     private var headerView: some View {
-        VStack(alignment: .leading, spacing: Theme.spacingXS) {
-            Text("SnagSnap")
-                .font(.system(size: 34, weight: .bold, design: .rounded))
-                .foregroundStyle(Theme.label)
+        HStack(alignment: .top, spacing: Theme.spacingM) {
+            VStack(alignment: .leading, spacing: Theme.spacingXS) {
+                Text("SnagSnap")
+                    .font(.system(size: 34, weight: .bold, design: .rounded))
+                    .foregroundStyle(Theme.label)
 
-            Text("Property Reports")
-                .font(Theme.fontTitle3)
-                .foregroundStyle(Theme.secondaryLabel)
+                Text("Property Reports")
+                    .font(Theme.fontTitle3)
+                    .foregroundStyle(Theme.secondaryLabel)
+            }
+
+            Spacer(minLength: Theme.spacingM)
+
+            Button(action: {
+                HapticService.shared.play(.medium)
+                router.navigateToCreateReport()
+            }) {
+                Image(systemName: "plus")
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundStyle(Theme.primary)
+                    .frame(width: 56, height: 56)
+                    .background(Theme.secondaryGroupedBackground)
+                    .clipShape(Circle())
+                    .shadow(color: Theme.shadowColor, radius: Theme.shadowRadiusLarge, x: 0, y: Theme.shadowYOffsetMedium)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Create new report")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, Theme.spacingM)
@@ -127,33 +136,32 @@ struct HomeDashboardView: View {
     /// The recent reports section containing header, search bar, and report list.
     @ViewBuilder
     private var recentReportsSection: some View {
-        VStack(spacing: Theme.spacingS) {
-            // Section header
-            HStack {
-                Text("Recent Reports")
-                    .font(Theme.fontHeadline)
-                    .foregroundStyle(Theme.label)
-
-                Spacer()
-
-                if reports.count > 5 {
-                    Button("See All") {
-                        // Future: navigate to full reports list
-                    }
-                    .font(Theme.fontSubheadline)
-                    .foregroundStyle(Theme.primary)
-                }
+        if reports.isEmpty {
+            NoReportsEmptyState {
+                router.navigateToCreateReport()
             }
-            .padding(.horizontal, Theme.spacingM)
+            .scaleEntryAnimation(delay: 0.1)
+            .padding(.top, Theme.spacingXL)
+        } else {
+            VStack(spacing: Theme.spacingS) {
+                // Section header
+                HStack {
+                    Text("Recent Reports")
+                        .font(Theme.fontHeadline)
+                        .foregroundStyle(Theme.label)
 
-            if reports.isEmpty {
-                // Empty state
-                NoReportsEmptyState {
-                    router.navigateToCreateReport()
+                    Spacer()
+
+                    if reports.count > 5 {
+                        Button("See All") {
+                            // Future: navigate to full reports list
+                        }
+                        .font(Theme.fontSubheadline)
+                        .foregroundStyle(Theme.primary)
+                    }
                 }
-                .scaleEntryAnimation(delay: 0.1)
-                .frame(minHeight: 400)
-            } else {
+                .padding(.horizontal, Theme.spacingM)
+
                 // Search bar
                 searchBar
 

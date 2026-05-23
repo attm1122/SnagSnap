@@ -16,13 +16,34 @@ struct NoReportsEmptyState: View {
     var action: () -> Void
 
     var body: some View {
-        SSEmptyState(
-            icon: "doc.text",
-            title: "No reports yet",
-            message: "Create your first property report and turn photos into a polished PDF in minutes.",
-            buttonTitle: "New Report",
-            buttonAction: action
-        )
+        VStack(spacing: Theme.spacingL) {
+            Image(systemName: "doc.text")
+                .font(.system(size: 52, weight: .light))
+                .foregroundStyle(Theme.tertiaryLabel)
+                .accessibilityHidden(true)
+
+            VStack(spacing: Theme.spacingS) {
+                Text("No reports yet")
+                    .font(Theme.fontTitle3)
+                    .foregroundStyle(Theme.label)
+                    .multilineTextAlignment(.center)
+
+                Text("Create your first property report and turn photos into a polished PDF in minutes.")
+                    .font(Theme.fontBody)
+                    .foregroundStyle(Theme.secondaryLabel)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(3)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: 340)
+
+            SSButton("New Report", style: .primary, icon: "plus", action: action)
+                .buttonStyle(.animated(haptic: .medium))
+                .padding(.top, Theme.spacingXS)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, Theme.spacingL)
+        .padding(.vertical, Theme.spacingXL)
     }
 }
 
