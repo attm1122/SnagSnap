@@ -122,42 +122,47 @@ struct CreateReportView: View {
     // MARK: - Body
 
     var body: some View {
-        Form {
-            // Paywall banner (if applicable)
-            if !EntitlementManager.shared.canCreateNewReport() {
-                paywallSection
-                    .entryAnimation(delay: 0.0)
+        ScrollView {
+            VStack(alignment: .leading, spacing: Theme.spacingL) {
+                if !EntitlementManager.shared.canCreateNewReport() {
+                    paywallSection
+                        .entryAnimation(delay: 0.0)
+                }
+
+                requiredFieldsSection
+                    .entryAnimation(delay: 0.05)
+
+                reportTypeSection
+                    .entryAnimation(delay: 0.1)
+
+                optionalFieldsSection
+                    .entryAnimation(delay: 0.15)
+
+                notesSection
+                    .entryAnimation(delay: 0.2)
             }
-
-            // Required fields
-            requiredFieldsSection
-                .entryAnimation(delay: 0.05)
-
-            // Report type
-            reportTypeSection
-                .entryAnimation(delay: 0.1)
-
-            // Optional fields
-            optionalFieldsSection
-                .entryAnimation(delay: 0.15)
-
-            // Notes
-            notesSection
-                .entryAnimation(delay: 0.2)
+            .padding(.horizontal, Theme.spacingM)
+            .padding(.top, Theme.spacingXL)
+            .padding(.bottom, Theme.spacingXXL)
         }
-        .scrollContentBackground(.hidden)
         .background(
             LinearGradient(
-                colors: [Theme.blueSurfaceStrong, Theme.background, Theme.background],
+                colors: [
+                    Theme.blueSurfaceStrong,
+                    Theme.background,
+                    Theme.background
+                ],
                 startPoint: .top,
                 endPoint: .bottom
             )
             .ignoresSafeArea()
         )
         .tint(Theme.primary)
+        .foregroundStyle(Theme.ink)
         .navigationTitle("New Report")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(Theme.blueSurfaceStrong, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel") {
@@ -217,7 +222,7 @@ struct CreateReportView: View {
     // MARK: - Paywall Section
 
     private var paywallSection: some View {
-        Section {
+        SSCard(background: Theme.warning.opacity(0.08), borderColor: Theme.warning.opacity(0.25)) {
             VStack(spacing: Theme.spacingM) {
                 HStack(spacing: Theme.spacingS) {
                     Image(systemName: "lock.fill")
@@ -227,11 +232,11 @@ struct CreateReportView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Report Limit Reached")
                             .font(.headline.weight(.semibold))
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(Theme.ink)
 
                         Text("Upgrade to Pro for unlimited reports.")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Theme.secondaryLabel)
                     }
 
                     Spacer()
@@ -248,9 +253,7 @@ struct CreateReportView: View {
                 }
                 .accessibilityLabel("Upgrade to Pro")
             }
-            .padding(.vertical, Theme.spacingS)
         }
-        .listRowBackground(Theme.warning.opacity(0.08))
         .sheet(isPresented: $showPaywall) {
             PaywallView()
         }
@@ -259,132 +262,175 @@ struct CreateReportView: View {
     // MARK: - Required Fields Section
 
     private var requiredFieldsSection: some View {
-        Section {
-            // Report Title
-            VStack(alignment: .leading, spacing: 4) {
-                TextField("Report Title", text: Binding(
+        FormCard(
+            title: "Required Information",
+            footer: "These fields are required to create a report."
+        ) {
+            VStack(spacing: Theme.spacingM) {
+                RequiredTextInput(
+                    title: "Report Title",
+                    placeholder: "e.g. Final inspection - Unit 4",
+                    text: Binding(
                     get: { viewModel?.title ?? "" },
                     set: { viewModel?.title = $0 }
-                ))
-                .font(.body)
-                .autocorrectionDisabled()
+                    ),
+                    errorMessage: (viewModel?.showValidationErrors ?? false) && !(viewModel?.isTitleValid ?? true)
+                    ? "Report title is required"
+                    : nil
+                )
 
-                if (viewModel?.showValidationErrors ?? false) && !(viewModel?.isTitleValid ?? true) {
-                    Text("Report title is required")
-                        .font(.caption)
-                        .foregroundStyle(Theme.error)
-                }
-            }
-
-            // Property Name
-            VStack(alignment: .leading, spacing: 4) {
-                TextField("Property Name", text: Binding(
+                RequiredTextInput(
+                    title: "Property Name",
+                    placeholder: "e.g. Harbour View Apartments",
+                    text: Binding(
                     get: { viewModel?.propertyName ?? "" },
                     set: { viewModel?.propertyName = $0 }
-                ))
-                .font(.body)
-                .autocorrectionDisabled()
+                    ),
+                    errorMessage: (viewModel?.showValidationErrors ?? false) && !(viewModel?.isPropertyNameValid ?? true)
+                    ? "Property name is required"
+                    : nil
+                )
 
-                if (viewModel?.showValidationErrors ?? false) && !(viewModel?.isPropertyNameValid ?? true) {
-                    Text("Property name is required")
-                        .font(.caption)
-                        .foregroundStyle(Theme.error)
-                }
-            }
-
-            // Property Address
-            VStack(alignment: .leading, spacing: 4) {
-                TextField("Property Address", text: Binding(
+                RequiredTextInput(
+                    title: "Property Address",
+                    placeholder: "Street address",
+                    text: Binding(
                     get: { viewModel?.propertyAddress ?? "" },
                     set: { viewModel?.propertyAddress = $0 }
-                ), axis: .vertical)
-                .font(.body)
+                    ),
+                    axis: .vertical,
+                    errorMessage: (viewModel?.showValidationErrors ?? false) && !(viewModel?.isPropertyAddressValid ?? true)
+                    ? "Property address is required"
+                    : nil
+                )
 
-                if (viewModel?.showValidationErrors ?? false) && !(viewModel?.isPropertyAddressValid ?? true) {
-                    Text("Property address is required")
-                        .font(.caption)
-                        .foregroundStyle(Theme.error)
+                HStack(spacing: Theme.spacingM) {
+                    Label("Inspection Date", systemImage: Theme.iconCalendar)
+                        .font(Theme.callout)
+                        .foregroundStyle(Theme.ink)
+
+                    Spacer()
+
+                    DatePicker(
+                        "Inspection Date",
+                        selection: Binding(
+                            get: { viewModel?.inspectionDate ?? Date() },
+                            set: { viewModel?.inspectionDate = $0 }
+                        ),
+                        displayedComponents: .date
+                    )
+                    .labelsHidden()
+                    .font(Theme.body)
+                    .foregroundStyle(Theme.ink)
                 }
+                .padding(.horizontal, Theme.spacingM)
+                .frame(minHeight: 52)
+                .background(Theme.background)
+                .clipShape(RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous)
+                        .stroke(Theme.separator, lineWidth: 1)
+                )
             }
-
-            // Inspection Date
-            DatePicker(
-                "Inspection Date",
-                selection: Binding(
-                    get: { viewModel?.inspectionDate ?? Date() },
-                    set: { viewModel?.inspectionDate = $0 }
-                ),
-                displayedComponents: .date
-            )
-            .font(.body)
-        } header: {
-            Text("Required Information")
-        } footer: {
-            Text("These fields are required to create a report.")
-                .font(.caption)
         }
-        .listRowBackground(Theme.cardBackground)
     }
 
     // MARK: - Report Type Section
 
     private var reportTypeSection: some View {
-        Section("Report Type") {
-            Picker("Type", selection: Binding(
-                get: { viewModel?.reportType ?? .general },
-                set: { newValue in
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        viewModel?.reportType = newValue
+        FormCard(title: "Report Type") {
+            HStack(spacing: Theme.spacingM) {
+                Image(systemName: viewModel?.reportType.icon ?? ReportType.general.icon)
+                    .font(.title3)
+                    .foregroundStyle(Theme.primary)
+                    .frame(width: 40, height: 40)
+                    .background(Theme.primaryLight, in: RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous))
+
+                Picker("Type", selection: Binding(
+                    get: { viewModel?.reportType ?? .general },
+                    set: { newValue in
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            viewModel?.reportType = newValue
+                        }
+                    }
+                )) {
+                    ForEach(ReportType.allCases) { type in
+                        Label(type.displayName, systemImage: type.icon)
+                            .tag(type)
                     }
                 }
-            )) {
-                ForEach(ReportType.allCases) { type in
-                    HStack(spacing: Theme.spacingS) {
-                        Image(systemName: type.icon)
-                            .foregroundStyle(Theme.primary)
-                            .frame(width: 24)
-                        Text(type.displayName)
-                    }
-                    .tag(type)
-                }
+                .pickerStyle(.navigationLink)
+                .font(Theme.body)
+                .foregroundStyle(Theme.ink)
             }
-            .pickerStyle(.navigationLink)
+            .padding(.horizontal, Theme.spacingM)
+            .frame(minHeight: 56)
+            .background(Theme.background)
+            .clipShape(RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous)
+                    .stroke(Theme.separator, lineWidth: 1)
+            )
         }
-        .listRowBackground(Theme.cardBackground)
     }
 
     // MARK: - Optional Fields Section
 
     private var optionalFieldsSection: some View {
-        Section("Optional Details") {
-            TextField("Client / Tenant Name", text: Binding(
-                get: { viewModel?.clientName ?? "" },
-                set: { viewModel?.clientName = $0 }
-            ))
-            .font(.body)
+        FormCard(title: "Optional Details") {
+            VStack(spacing: Theme.spacingM) {
+                RequiredTextInput(
+                    title: "Client / Tenant Name",
+                    placeholder: "Optional",
+                    text: Binding(
+                        get: { viewModel?.clientName ?? "" },
+                        set: { viewModel?.clientName = $0 }
+                    )
+                )
 
-            TextField("Inspector Name", text: Binding(
-                get: { viewModel?.inspectorName ?? "" },
-                set: { viewModel?.inspectorName = $0 }
-            ))
-            .font(.body)
-            .autocorrectionDisabled()
+                RequiredTextInput(
+                    title: "Inspector Name",
+                    placeholder: "Optional",
+                    text: Binding(
+                        get: { viewModel?.inspectorName ?? "" },
+                        set: { viewModel?.inspectorName = $0 }
+                    )
+                )
+            }
         }
-        .listRowBackground(Theme.cardBackground)
     }
 
     // MARK: - Notes Section
 
     private var notesSection: some View {
-        Section("General Notes") {
-            TextEditor(text: Binding(
-                get: { viewModel?.generalNotes ?? "" },
-                set: { viewModel?.generalNotes = $0 }
-            ))
-            .font(.body)
-            .frame(minHeight: 100)
+        FormCard(title: "General Notes") {
+            ZStack(alignment: .topLeading) {
+                if (viewModel?.generalNotes ?? "").isEmpty {
+                    Text("Add context, access notes, or inspection scope.")
+                        .font(Theme.body)
+                        .foregroundStyle(Theme.tertiaryLabel)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 8)
+                }
+
+                TextEditor(text: Binding(
+                    get: { viewModel?.generalNotes ?? "" },
+                    set: { viewModel?.generalNotes = $0 }
+                ))
+                .font(Theme.body)
+                .foregroundStyle(Theme.ink)
+                .scrollContentBackground(.hidden)
+                .frame(minHeight: 132)
+            }
+            .padding(.horizontal, Theme.spacingM - 5)
+            .padding(.vertical, Theme.spacingS)
+            .background(Theme.background)
+            .clipShape(RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous)
+                    .stroke(Theme.separator, lineWidth: 1)
+            )
         }
-        .listRowBackground(Theme.cardBackground)
     }
 
     // MARK: - Helpers
@@ -393,6 +439,89 @@ struct CreateReportView: View {
         let descriptor = FetchDescriptor<UserProfile>()
         let profiles = (try? modelContext.fetch(descriptor)) ?? []
         return profiles.first?.inspectorName ?? ""
+    }
+}
+
+// MARK: - Form Components
+
+private struct FormCard<Content: View>: View {
+    let title: String
+    let footer: String?
+    @ViewBuilder let content: Content
+
+    init(title: String, footer: String? = nil, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.footer = footer
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.spacingS) {
+            Text(title)
+                .font(Theme.headline)
+                .foregroundStyle(Theme.ink)
+                .padding(.horizontal, Theme.spacingS)
+
+            SSCard(
+                padding: Theme.spacingM,
+                cornerRadius: Theme.radiusLarge,
+                shadowRadius: Theme.shadowRadiusMedium,
+                shadowY: Theme.shadowYOffsetMedium,
+                background: Theme.cardBackground,
+                borderColor: Theme.separator.opacity(0.65)
+            ) {
+                content
+            }
+
+            if let footer {
+                Text(footer)
+                    .font(Theme.caption)
+                    .foregroundStyle(Theme.secondaryLabel)
+                    .padding(.horizontal, Theme.spacingS)
+            }
+        }
+    }
+}
+
+private struct RequiredTextInput: View {
+    let title: String
+    let placeholder: String
+    @Binding var text: String
+    var axis: Axis = .horizontal
+    var errorMessage: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.spacingXS) {
+            Text(title)
+                .font(Theme.callout)
+                .foregroundStyle(Theme.ink)
+
+            TextField(
+                "",
+                text: $text,
+                prompt: Text(placeholder).foregroundStyle(Theme.tertiaryLabel),
+                axis: axis
+            )
+            .font(Theme.body)
+            .foregroundStyle(Theme.ink)
+            .tint(Theme.primary)
+            .autocorrectionDisabled()
+            .textInputAutocapitalization(.words)
+            .padding(.horizontal, Theme.spacingM)
+            .frame(minHeight: axis == .vertical ? 64 : 52, alignment: .center)
+            .background(Theme.background)
+            .clipShape(RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous)
+                    .stroke(errorMessage == nil ? Theme.separator : Theme.error, lineWidth: errorMessage == nil ? 1 : 1.5)
+            )
+
+            if let errorMessage {
+                Text(errorMessage)
+                    .font(Theme.caption)
+                    .foregroundStyle(Theme.error)
+            }
+        }
     }
 }
 
