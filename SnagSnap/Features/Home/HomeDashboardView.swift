@@ -207,8 +207,7 @@ struct HomeDashboardView: View {
                 title: "Capture",
                 subtitle: "Add inspection photos"
             ) {
-                HapticService.shared.play(.light)
-                router.navigateToCreateReport(targetTab: .issues)
+                startWorkspaceJourney(tab: .issues, launchAction: .addIssue)
             }
 
             HomeActionTile(
@@ -216,8 +215,7 @@ struct HomeDashboardView: View {
                 title: "Organize",
                 subtitle: "Areas, issues, notes"
             ) {
-                HapticService.shared.play(.light)
-                router.navigateToCreateReport(targetTab: .areas)
+                startWorkspaceJourney(tab: .areas, launchAction: .addArea)
             }
 
             HomeActionTile(
@@ -225,12 +223,46 @@ struct HomeDashboardView: View {
                 title: "Export",
                 subtitle: "Generate polished PDFs"
             ) {
-                HapticService.shared.play(.light)
-                router.navigateToCreateReport(targetTab: .report)
+                startWorkspaceJourney(tab: .report)
             }
         }
         .padding(.horizontal, Theme.spacingL)
         .scaleEntryAnimation(delay: 0.1)
+    }
+
+    private func startWorkspaceJourney(
+        tab: WorkspaceTab,
+        launchAction: WorkspaceLaunchAction = .none
+    ) {
+        HapticService.shared.play(.medium)
+
+        if let latestReport = reports.first {
+            router.navigateToReport(latestReport, initialTab: tab, launchAction: launchAction)
+            return
+        }
+
+        guard EntitlementManager.shared.canCreateNewReport() else {
+            router.navigateToCreateReport(targetTab: tab, launchAction: launchAction)
+            return
+        }
+
+        let report = InspectionReport(
+            title: "Draft Property Report",
+            propertyName: "New Property",
+            propertyAddress: "Address to add",
+            reportType: .general,
+            generalNotes: "Created from the \(tab.rawValue.lowercased()) quick start."
+        )
+        modelContext.insert(report)
+
+        do {
+            try modelContext.save()
+            router.navigateToReport(report, initialTab: tab, launchAction: launchAction)
+        } catch {
+            toastMessage = "Could not start report"
+            showToast = true
+            router.navigateToCreateReport(targetTab: tab, launchAction: launchAction)
+        }
     }
 
     // MARK: - Search Bar

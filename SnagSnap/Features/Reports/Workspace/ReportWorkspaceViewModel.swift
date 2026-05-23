@@ -29,6 +29,13 @@ enum WorkspaceTab: String, CaseIterable, Identifiable {
     }
 }
 
+/// A one-time action to run after a report workspace has opened.
+enum WorkspaceLaunchAction: Hashable {
+    case none
+    case addArea
+    case addIssue
+}
+
 // MARK: - Issue Filter
 
 /// Filter options for the issues list.

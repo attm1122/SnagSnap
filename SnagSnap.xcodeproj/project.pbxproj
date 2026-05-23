@@ -68,6 +68,7 @@
 		A412EC7ADA89EECA2404BD70 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C946D7CE14E63DEF84AE851C /* Foundation.framework */; };
 		A92C925F764CCC32DC835E0F /* ThumbnailService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A2F3B75985E9C955A5FDD14 /* ThumbnailService.swift */; };
 		AB1319694E9F5C04FE510F2D /* IssueDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19BAB8F8CA06C6CC73D98AE /* IssueDetailView.swift */; };
+		D4A3B2C1E0F9000000000002 /* NavigationRouteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4A3B2C1E0F9000000000001 /* NavigationRouteTests.swift */; };
 		ADB5683BCEC45CDF1356A333 /* SSTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF242A08D87CD4ECADE6A50E /* SSTag.swift */; };
 		B0C8AF02D657DFC30CC99917 /* HomeDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C3EBD1CF096633186BD15D /* HomeDashboardView.swift */; };
 		B29AB0B2281D492EF0A1454D /* SSToast.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10373A2C9CD02D71DA53B9B4 /* SSToast.swift */; };
@@ -172,6 +173,7 @@
 		CB88F1589D341AF8C6070892 /* ShareService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ShareService.swift; path = Services/ShareService.swift; sourceTree = "<group>"; };
 		CF242A08D87CD4ECADE6A50E /* SSTag.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SSTag.swift; path = Core/DesignSystem/SSTag.swift; sourceTree = "<group>"; };
 		D03CD9A7081AD93D20F2EC7A /* AnimatedButtonStyle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AnimatedButtonStyle.swift; path = Core/Utilities/AnimatedButtonStyle.swift; sourceTree = "<group>"; };
+		D4A3B2C1E0F9000000000001 /* NavigationRouteTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NavigationRouteTests.swift; sourceTree = "<group>"; };
 		D3B052D1E571CEAD295C71D9 /* SSErrorView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SSErrorView.swift; path = Core/DesignSystem/SSErrorView.swift; sourceTree = "<group>"; };
 		D5213B9CE6EB4AFC6A9F1E8F /* LaunchScreen.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = LaunchScreen.swift; path = App/LaunchScreen.swift; sourceTree = "<group>"; };
 		D8A18CC80AD0DCE1FD38857F /* IssueCardView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = IssueCardView.swift; path = Features/Issues/IssueCardView.swift; sourceTree = "<group>"; };
@@ -329,6 +331,7 @@
 				79C4549B6EF39110B1938C5F /* EnumTests.swift */,
 				3E190BDFED3E6CD3389D0F1C /* FileStorageServiceTests.swift */,
 				BB5CF0F8071D16394A6D2F12 /* ModelTests.swift */,
+				D4A3B2C1E0F9000000000001 /* NavigationRouteTests.swift */,
 				EB817276F5006B95D561DB09 /* PDFReportServiceTests.swift */,
 			);
 			name = Tests;
@@ -522,6 +525,7 @@
 				536A5F846FC13C9EEE89B19C /* EnumTests.swift in Sources */,
 				4CA10AFFCD9D15D8AD6FE294 /* FileStorageServiceTests.swift in Sources */,
 				11B55AE0EEC55E337A8E213B /* ModelTests.swift in Sources */,
+				D4A3B2C1E0F9000000000002 /* NavigationRouteTests.swift in Sources */,
 				9DC6123E4AD502F72CEA129F /* PDFReportServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -45,6 +45,7 @@ struct MainTabView: View {
             .tag(AppRouter.Tab.settings)
         }
         .tint(Theme.primary)
+        .environment(router)
         .toolbarBackground(Theme.cardBackground, for: .tabBar)
         .toolbarBackground(.visible, for: .tabBar)
         .onChange(of: router.selectedTab) { _, _ in
@@ -57,19 +58,19 @@ struct MainTabView: View {
     @ViewBuilder
     private func homeRouteDestination(for route: Route) -> some View {
         switch route {
-        case .createReport(let targetTab):
+        case .createReport(let targetTab, let launchAction):
             CreateReportView(
                 modelContext: modelContext,
                 onComplete: { report in
                     router.replaceCurrentHomeRoute(
-                        with: .reportWorkspace(report, initialTab: targetTab)
+                        with: .reportWorkspace(report, initialTab: targetTab, launchAction: launchAction)
                     )
                 }
             )
 
-        case .reportWorkspace(let reportID, let initialTab):
+        case .reportWorkspace(let reportID, let initialTab, let launchAction):
             if let report = AppRouter.fetchReport(id: reportID, context: modelContext) {
-                ReportWorkspaceView(report: report, initialTab: initialTab)
+                ReportWorkspaceView(report: report, initialTab: initialTab, launchAction: launchAction)
             } else {
                 errorView(message: "Report not found")
             }

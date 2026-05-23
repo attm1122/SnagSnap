@@ -15,17 +15,25 @@ struct ReportWorkspaceView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(AppRouter.self) private var router
     @State private var viewModel = ReportWorkspaceViewModel()
     @State private var hasAppliedInitialTab = false
+    @State private var hasPerformedLaunchAction = false
 
     // MARK: - Report
 
     let report: InspectionReport
     private let initialTab: WorkspaceTab
+    private let launchAction: WorkspaceLaunchAction
 
-    init(report: InspectionReport, initialTab: WorkspaceTab = .overview) {
+    init(
+        report: InspectionReport,
+        initialTab: WorkspaceTab = .overview,
+        launchAction: WorkspaceLaunchAction = .none
+    ) {
         self.report = report
         self.initialTab = initialTab
+        self.launchAction = launchAction
     }
 
     // MARK: - Body
@@ -104,7 +112,7 @@ struct ReportWorkspaceView: View {
         .sheet(isPresented: $viewModel.showEditSheet) {
             EditReportSheet(report: report)
         }
-        .sheet(isPresented: $viewModel.showAddAreaSheet) {
+        .sheet(isPresented: parentAddAreaSheetBinding) {
             AddEditAreaView(report: report)
         }
         .onAppear {
@@ -112,6 +120,7 @@ struct ReportWorkspaceView: View {
                 viewModel.selectedTab = initialTab
                 hasAppliedInitialTab = true
             }
+            performLaunchActionIfNeeded()
         }
         .animateOnAppear(delay: 0.05, duration: 0.4)
     }
@@ -121,6 +130,54 @@ struct ReportWorkspaceView: View {
     private func shareReport() {
         viewModel.generatePDF(for: report, modelContext: modelContext)
         viewModel.prepareShare()
+    }
+
+    private var parentAddAreaSheetBinding: Binding<Bool> {
+        Binding(
+            get: { viewModel.showAddAreaSheet && viewModel.selectedTab != .areas },
+            set: { isPresented in
+                if !isPresented {
+                    viewModel.showAddAreaSheet = false
+                }
+            }
+        )
+    }
+
+    private func performLaunchActionIfNeeded() {
+        guard !hasPerformedLaunchAction else { return }
+        hasPerformedLaunchAction = true
+
+        switch launchAction {
+        case .none:
+            return
+        case .addArea:
+            DispatchQueue.main.async {
+                viewModel.showAddAreaSheet = true
+            }
+        case .addIssue:
+            DispatchQueue.main.async {
+                let area = firstAreaOrCreateGeneralArea()
+                router.navigateToIssueEditor(issue: nil, area: area, report: report)
+            }
+        }
+    }
+
+    private func firstAreaOrCreateGeneralArea() -> InspectionArea {
+        if let firstArea = report.areas?.first {
+            return firstArea
+        }
+
+        let area = InspectionArea(name: "General")
+        modelContext.insert(area)
+        area.report = report
+
+        if report.areas == nil {
+            report.areas = []
+        }
+        report.areas?.append(area)
+        report.updatedAt = Date()
+        try? modelContext.save()
+        return area
     }
 }
 
@@ -271,4 +328,5 @@ private struct EditReportSheet: View {
         ReportWorkspaceView(report: report)
     }
     .modelContainer(container)
+    .environment(AppRouter.shared)
 }
