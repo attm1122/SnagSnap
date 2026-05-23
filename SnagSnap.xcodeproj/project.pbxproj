@@ -70,6 +70,7 @@
 		AB1319694E9F5C04FE510F2D /* IssueDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19BAB8F8CA06C6CC73D98AE /* IssueDetailView.swift */; };
 		ADB5683BCEC45CDF1356A333 /* SSTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF242A08D87CD4ECADE6A50E /* SSTag.swift */; };
 		B0C8AF02D657DFC30CC99917 /* HomeDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C3EBD1CF096633186BD15D /* HomeDashboardView.swift */; };
+		B17C4A9984C94C1A8B090001 /* CaptureDraftFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = B17C4A9984C94C1A8B090000 /* CaptureDraftFactory.swift */; };
 		B29AB0B2281D492EF0A1454D /* SSToast.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10373A2C9CD02D71DA53B9B4 /* SSToast.swift */; };
 		B2FC3B425F4FCFD6C635ECF2 /* ShareService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB88F1589D341AF8C6070892 /* ShareService.swift */; };
 		B488B683B24901D4B7751749 /* AreasTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 577FD171D32728F5C2D03CA8 /* AreasTabView.swift */; };
@@ -165,6 +166,7 @@
 		A2ED86DDA824FDBB5DA7B52E /* String+Extensions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = "String+Extensions.swift"; path = "Core/Extensions/String+Extensions.swift"; sourceTree = "<group>"; };
 		AC5C7254F21183E0849C208A /* ReportTabView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ReportTabView.swift; path = Features/Reports/Workspace/ReportTabView.swift; sourceTree = "<group>"; };
 		AF9E67EF93A0B0FC90C6C967 /* SettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SettingsView.swift; path = Features/Settings/SettingsView.swift; sourceTree = "<group>"; };
+		B17C4A9984C94C1A8B090000 /* CaptureDraftFactory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CaptureDraftFactory.swift; path = Features/Home/CaptureDraftFactory.swift; sourceTree = "<group>"; };
 		B1AB43AFD8DF207AF78DC9FE /* PhotoAnnotationView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PhotoAnnotationView.swift; path = Features/Photos/Annotation/PhotoAnnotationView.swift; sourceTree = "<group>"; };
 		B6893FE08DA8063182353A4E /* SSLoadingView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SSLoadingView.swift; path = Core/DesignSystem/SSLoadingView.swift; sourceTree = "<group>"; };
 		BB5CF0F8071D16394A6D2F12 /* ModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ModelTests.swift; sourceTree = "<group>"; };
@@ -273,6 +275,7 @@
 				252E0A38EC7B56544F9A7983 /* ReduceMotionEnvironment.swift */,
 				DD234639D5EC26E45B0C693F /* ViewModifiers.swift */,
 				E18FA1A4A515214DDDC224DB /* AddEditAreaView.swift */,
+				B17C4A9984C94C1A8B090000 /* CaptureDraftFactory.swift */,
 				56331D2EA849BBD8387564D9 /* EmptyStates.swift */,
 				68C3EBD1CF096633186BD15D /* HomeDashboardView.swift */,
 				9F81F228B7763AE199F0642A /* HomeViewModel.swift */,
@@ -469,6 +472,7 @@
 				92FBFDE0686B005BA35E8CFD /* ReduceMotionEnvironment.swift in Sources */,
 				EB4D96724B12A6A2E3F3AC33 /* ViewModifiers.swift in Sources */,
 				2A946F64D1F1738F5841B2DE /* AddEditAreaView.swift in Sources */,
+				B17C4A9984C94C1A8B090001 /* CaptureDraftFactory.swift in Sources */,
 				2BC0F1456466AE5D1123A9F5 /* EmptyStates.swift in Sources */,
 				B0C8AF02D657DFC30CC99917 /* HomeDashboardView.swift in Sources */,
 				F4ED02647F55A6DDF31386C9 /* HomeViewModel.swift in Sources */,

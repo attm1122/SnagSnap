@@ -168,6 +168,11 @@ struct ReportWorkspaceView: View {
                 let area = firstAreaOrCreateGeneralArea()
                 router.navigateToIssueEditor(issue: nil, area: area, report: report)
             }
+        case .startCapture:
+            DispatchQueue.main.async {
+                let area = firstAreaOrCreateGeneralArea()
+                router.navigateToIssueEditor(issue: nil, area: area, report: report, startWithCamera: true)
+            }
         }
     }
 

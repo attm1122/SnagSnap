@@ -34,6 +34,7 @@ enum WorkspaceLaunchAction: Hashable {
     case none
     case addArea
     case addIssue
+    case startCapture
 }
 
 // MARK: - Issue Filter

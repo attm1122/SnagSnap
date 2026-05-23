@@ -15,13 +15,17 @@ import SwiftData
 struct MainTabView: View {
 
     @State private var router = AppRouter.shared
+    @State private var homePath: [Route] = []
+    @State private var settingsPath: [Route] = []
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
+        @Bindable var router = router
+
         TabView(selection: $router.selectedTab) {
             // MARK: Home Tab
-            NavigationStack(path: $router.homePath) {
+            NavigationStack(path: $homePath) {
                 HomeDashboardView()
                     .navigationDestination(for: Route.self) { route in
                         homeRouteDestination(for: route)
@@ -33,7 +37,7 @@ struct MainTabView: View {
             .tag(AppRouter.Tab.home)
 
             // MARK: Settings Tab
-            NavigationStack(path: $router.settingsPath) {
+            NavigationStack(path: $settingsPath) {
                 SettingsView(viewModel: SettingsViewModel(modelContext: modelContext))
                     .navigationDestination(for: Route.self) { route in
                         settingsRouteDestination(for: route)
@@ -48,6 +52,25 @@ struct MainTabView: View {
         .environment(router)
         .toolbarBackground(Theme.cardBackground, for: .tabBar)
         .toolbarBackground(.visible, for: .tabBar)
+        .onAppear {
+            syncLocalPathsFromRouter()
+        }
+        .onChange(of: router.homePath) { _, newPath in
+            guard homePath != newPath else { return }
+            homePath = newPath
+        }
+        .onChange(of: router.settingsPath) { _, newPath in
+            guard settingsPath != newPath else { return }
+            settingsPath = newPath
+        }
+        .onChange(of: homePath) { _, newPath in
+            guard router.homePath != newPath else { return }
+            router.homePath = newPath
+        }
+        .onChange(of: settingsPath) { _, newPath in
+            guard router.settingsPath != newPath else { return }
+            router.settingsPath = newPath
+        }
         .onChange(of: router.selectedTab) { _, _ in
             HapticService.shared.play(.selection)
         }
@@ -62,6 +85,11 @@ struct MainTabView: View {
             CreateReportView(
                 modelContext: modelContext,
                 onComplete: { report in
+                    if launchAction == .startCapture {
+                        completeReportCreationWithCapture(report)
+                        return
+                    }
+
                     router.completeCreateReport(
                         report,
                         targetTab: targetTab,
@@ -77,7 +105,7 @@ struct MainTabView: View {
                 errorView(message: "Report not found")
             }
 
-        case .issueEditor(let issueID, let areaID, let reportID):
+        case .issueEditor(let issueID, let areaID, let reportID, let startWithCamera):
             if let report = AppRouter.fetchReport(id: reportID, context: modelContext) {
                 let issue = issueID.flatMap { AppRouter.fetchIssue(id: $0, context: modelContext) }
                 let area = areaID.flatMap { AppRouter.fetchArea(id: $0, context: modelContext) }
@@ -85,6 +113,7 @@ struct MainTabView: View {
                     issue: issue,
                     area: area,
                     report: report,
+                    startWithCamera: startWithCamera,
                     modelContext: modelContext,
                     onComplete: { router.goBack() }
                 )
@@ -156,6 +185,20 @@ struct MainTabView: View {
         }
         .padding(Theme.spacingXL)
         .navigationTitle("Error")
+    }
+
+    private func syncLocalPathsFromRouter() {
+        homePath = router.homePath
+        settingsPath = router.settingsPath
+    }
+
+    private func completeReportCreationWithCapture(_ report: InspectionReport) {
+        do {
+            _ = try CaptureDraftFactory.generalArea(for: report, context: modelContext)
+            router.completeCreateReport(report, targetTab: .issues, launchAction: .none)
+        } catch {
+            router.completeCreateReport(report, targetTab: .issues, launchAction: .none)
+        }
     }
 }
 

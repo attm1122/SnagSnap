@@ -19,8 +19,8 @@ struct HomeDashboardView: View {
     // MARK: - Environment & State
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(AppRouter.self) private var router
     @State private var viewModel = HomeViewModel()
-    @State private var router = AppRouter.shared
     @State private var showDeleteToast = false
     @State private var toastMessage = ""
     @State private var showToast = false
@@ -29,6 +29,7 @@ struct HomeDashboardView: View {
     @State private var showAllReports = false
     @State private var pendingJourney: HomeJourneyIntent?
     @State private var showReportChooser = false
+    @State private var activeCaptureTarget: CaptureTarget?
 
     /// SwiftData query for all inspection reports, sorted by creation date (newest first).
     @Query(sort: \InspectionReport.createdAt, order: .reverse)
@@ -57,7 +58,7 @@ struct HomeDashboardView: View {
 
                     // MARK: Primary CTA
                     if !reports.isEmpty {
-                        newReportButton
+                        captureActionSection
                     }
 
                     // MARK: Recent Reports Section
@@ -125,6 +126,18 @@ struct HomeDashboardView: View {
                 }
             }
         }
+        .fullScreenCover(item: $activeCaptureTarget) { target in
+            NavigationStack {
+                CreateEditIssueView(
+                    issue: nil,
+                    area: target.area,
+                    report: target.report,
+                    startWithCamera: target.startWithCamera,
+                    modelContext: modelContext,
+                    onComplete: { activeCaptureTarget = nil }
+                )
+            }
+        }
     }
 
     // MARK: - Header
@@ -139,7 +152,7 @@ struct HomeDashboardView: View {
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(Theme.secondaryLabel)
 
-                Text(reports.isEmpty ? "Start a property report." : "What needs attention today?")
+                Text(reports.isEmpty ? "Capture the property first." : "What needs documenting?")
                     .font(.system(size: 40, weight: .bold))
                     .foregroundStyle(Theme.ink)
                     .lineSpacing(0)
@@ -160,28 +173,41 @@ struct HomeDashboardView: View {
 
             Spacer()
 
-            CircleIconButton(systemName: "plus", label: "Create new report") {
-                HapticService.shared.play(.medium)
-                router.navigateToCreateReport()
+            CircleIconButton(systemName: "camera.viewfinder", label: "Start capture") {
+                startCapture()
             }
         }
     }
 
-    // MARK: - New Report Button
+    // MARK: - Capture Actions
 
-    /// The primary call-to-action button for creating a new report.
-    private var newReportButton: some View {
-        SSButton(
-            "New Report",
-            style: .primary,
-            icon: "plus",
-            isFullWidth: true
-        ) {
-            HapticService.shared.play(.success)
-            router.navigateToCreateReport()
+    /// The primary action area for capture-led report creation.
+    private var captureActionSection: some View {
+        VStack(spacing: Theme.spacingS) {
+            SSButton(
+                "Start Capture",
+                style: .primary,
+                icon: "camera.fill",
+                isFullWidth: true
+            ) {
+                startCapture()
+            }
+            .buttonStyle(.animated(haptic: .medium))
+            .accessibilityLabel("Start photo capture")
+
+            Button {
+                HapticService.shared.play(.light)
+                router.navigateToCreateReport()
+            } label: {
+                Label("Report Details", systemImage: "doc.text")
+                    .font(Theme.fontSubheadline.weight(.semibold))
+                    .foregroundStyle(Theme.primary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Theme.spacingS)
+            }
+            .buttonStyle(.animated(haptic: .light))
+            .accessibilityLabel("Create report from details")
         }
-        .buttonStyle(.animated(haptic: .medium))
-        .accessibilityLabel("Create new report")
         .padding(.horizontal, Theme.spacingL)
     }
 
@@ -229,20 +255,20 @@ struct HomeDashboardView: View {
             GridItem(.flexible(), spacing: Theme.spacingM)
         ], spacing: Theme.spacingM) {
             HomeActionTile(
-                icon: "doc.badge.plus",
-                title: "Create",
-                subtitle: "Property details"
+                icon: "camera.viewfinder",
+                title: "Capture",
+                subtitle: "Photos first"
             ) {
-                HapticService.shared.play(.medium)
-                router.navigateToCreateReport()
+                startCapture()
             }
 
             HomeActionTile(
-                icon: "camera.viewfinder",
-                title: "Capture",
-                subtitle: "Photos and issues"
+                icon: "doc.badge.plus",
+                title: "Details",
+                subtitle: "Property info"
             ) {
-                startWorkspaceJourney(.capture)
+                HapticService.shared.play(.medium)
+                router.navigateToCreateReport()
             }
 
             HomeActionTile(
@@ -268,6 +294,11 @@ struct HomeDashboardView: View {
     private func startWorkspaceJourney(_ intent: HomeJourneyIntent) {
         HapticService.shared.play(.medium)
 
+        if intent == .capture {
+            startCapture()
+            return
+        }
+
         if reports.first != nil {
             pendingJourney = intent
             return
@@ -283,17 +314,9 @@ struct HomeDashboardView: View {
             return
         }
 
-        let report = InspectionReport(
-            title: "Draft Property Report",
-            propertyName: "New Property",
-            propertyAddress: "Address to add",
-            reportType: .general,
-            generalNotes: "Created from the \(intent.tab.rawValue.lowercased()) quick start. Complete the property details before sharing."
-        )
-        modelContext.insert(report)
-
         do {
-            try modelContext.save()
+            let draft = try CaptureDraftFactory.makeCaptureDraft(context: modelContext)
+            let report = draft.report
             router.navigateToReport(report, initialTab: intent.tab, launchAction: intent.launchAction)
         } catch {
             toastMessage = "Could not start report"
@@ -323,6 +346,35 @@ struct HomeDashboardView: View {
         guard let intent = pendingJourney else { return }
         pendingJourney = nil
         router.navigateToCreateReport(targetTab: intent.tab, launchAction: intent.launchAction)
+    }
+
+    private func startCapture() {
+        HapticService.shared.play(.medium)
+
+        if let latestReport = reports.first {
+            do {
+                let area = try CaptureDraftFactory.generalArea(for: latestReport, context: modelContext)
+                activeCaptureTarget = CaptureTarget(report: latestReport, area: area)
+            } catch {
+                toastMessage = "Could not start capture"
+                showToast = true
+            }
+            return
+        }
+
+        guard EntitlementManager.shared.canCreateNewReport() else {
+            router.navigateToCreateReport(targetTab: .issues, launchAction: .startCapture)
+            return
+        }
+
+        do {
+            let draft = try CaptureDraftFactory.makeCaptureDraft(context: modelContext)
+            activeCaptureTarget = CaptureTarget(report: draft.report, area: draft.area)
+        } catch {
+            toastMessage = "Could not start capture"
+            showToast = true
+            router.navigateToCreateReport(targetTab: .issues, launchAction: .startCapture)
+        }
     }
 
     // MARK: - Search Bar
@@ -406,6 +458,13 @@ struct HomeDashboardView: View {
     }
 }
 
+private struct CaptureTarget: Identifiable {
+    let id = UUID()
+    let report: InspectionReport
+    let area: InspectionArea
+    let startWithCamera = true
+}
+
 private struct CircleIconButton: View {
     let systemName: String
     let label: String
@@ -483,7 +542,7 @@ private enum HomeJourneyIntent: Equatable {
 
     var launchAction: WorkspaceLaunchAction {
         switch self {
-        case .capture: return .addIssue
+        case .capture: return .startCapture
         case .organize: return .addArea
         case .export: return .none
         }

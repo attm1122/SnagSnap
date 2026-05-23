@@ -8,14 +8,14 @@ final class NavigationRouteTests: XCTestCase {
     }
 
     func testCreateReportRouteCarriesWorkspaceLaunchAction() {
-        let route = Route.createReport(targetTab: .areas, launchAction: .addArea)
+        let route = Route.createReport(targetTab: .issues, launchAction: .startCapture)
 
         guard case .createReport(let targetTab, let launchAction) = route else {
             return XCTFail("Expected create report route")
         }
 
-        XCTAssertEqual(targetTab, .areas)
-        XCTAssertEqual(launchAction, .addArea)
+        XCTAssertEqual(targetTab, .issues)
+        XCTAssertEqual(launchAction, .startCapture)
     }
 
     func testReportWorkspaceRouteCarriesInitialTabAndLaunchAction() {
@@ -43,6 +43,31 @@ final class NavigationRouteTests: XCTestCase {
         router.navigateToCreateReport()
 
         XCTAssertEqual(router.homePath.count, 1)
+    }
+
+    func testIssueEditorRouteCarriesStartWithCameraFlag() {
+        let report = InspectionReport(
+            title: "Draft Photo Report",
+            propertyName: "Property to identify",
+            propertyAddress: "Address to add"
+        )
+        let area = InspectionArea(name: "General")
+
+        let route = Route.issueEditor(
+            issue: nil,
+            area: area,
+            report: report,
+            startWithCamera: true
+        )
+
+        guard case .issueEditor(let issueID, let areaID, let reportID, let startWithCamera) = route else {
+            return XCTFail("Expected issue editor route")
+        }
+
+        XCTAssertNil(issueID)
+        XCTAssertEqual(areaID, area.id)
+        XCTAssertEqual(reportID, report.id)
+        XCTAssertTrue(startWithCamera)
     }
 
     func testCompleteCreateReportTransitionsThroughRootBeforeWorkspace() {

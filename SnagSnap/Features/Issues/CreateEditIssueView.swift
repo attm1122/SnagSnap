@@ -284,10 +284,12 @@ struct CreateEditIssueView: View {
     private let issue: InspectionIssue?
     private let area: InspectionArea?
     private let report: InspectionReport
+    private let startWithCamera: Bool
 
     // MARK: - View Model
 
     @State private var viewModel: CreateEditIssueViewModel?
+    @State private var hasStartedCamera = false
 
     // MARK: - Local State for Photo Pickers
 
@@ -313,12 +315,14 @@ struct CreateEditIssueView: View {
         issue: InspectionIssue? = nil,
         area: InspectionArea? = nil,
         report: InspectionReport,
+        startWithCamera: Bool = false,
         modelContext: ModelContext? = nil,
         onComplete: (() -> Void)? = nil
     ) {
         self.issue = issue
         self.area = area
         self.report = report
+        self.startWithCamera = startWithCamera
         self.injectedModelContext = modelContext
         self.onComplete = onComplete
     }
@@ -422,6 +426,7 @@ struct CreateEditIssueView: View {
                         self.onComplete?()
                     }
                 )
+                startCameraIfNeeded()
             }
         }
     }
@@ -750,6 +755,15 @@ struct CreateEditIssueView: View {
     private var imageViewerSheet: some View {
         if let photo = selectedPhotoForViewer {
             ImageViewerView(photo: photo, initialShowAnnotated: viewerShowAnnotated)
+        }
+    }
+
+    private func startCameraIfNeeded() {
+        guard startWithCamera, issue == nil, !hasStartedCamera else { return }
+        hasStartedCamera = true
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+            viewModel?.isShowingCamera = true
         }
     }
 }

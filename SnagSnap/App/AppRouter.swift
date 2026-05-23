@@ -16,7 +16,7 @@ enum Route: Hashable {
     case reportWorkspace(reportID: UUID, initialTab: WorkspaceTab, launchAction: WorkspaceLaunchAction)
 
     /// Open the issue editor (nil issue = new issue)
-    case issueEditor(issueID: UUID?, areaID: UUID?, reportID: UUID)
+    case issueEditor(issueID: UUID?, areaID: UUID?, reportID: UUID, startWithCamera: Bool)
 
     /// Open the area editor (nil area = new area)
     case areaEditor(areaID: UUID?, reportID: UUID)
@@ -43,8 +43,18 @@ enum Route: Hashable {
         .reportWorkspace(reportID: report.id, initialTab: initialTab, launchAction: launchAction)
     }
 
-    static func issueEditor(issue: InspectionIssue?, area: InspectionArea?, report: InspectionReport) -> Route {
-        .issueEditor(issueID: issue?.id, areaID: area?.id, reportID: report.id)
+    static func issueEditor(
+        issue: InspectionIssue?,
+        area: InspectionArea?,
+        report: InspectionReport,
+        startWithCamera: Bool = false
+    ) -> Route {
+        .issueEditor(
+            issueID: issue?.id,
+            areaID: area?.id,
+            reportID: report.id,
+            startWithCamera: startWithCamera
+        )
     }
 
     static func areaEditor(area: InspectionArea?, report: InspectionReport) -> Route {
@@ -157,8 +167,20 @@ final class AppRouter {
     }
 
     /// Navigate to issue editor
-    func navigateToIssueEditor(issue: InspectionIssue?, area: InspectionArea?, report: InspectionReport) {
-        appendToHomePath(Route.issueEditor(issue: issue, area: area, report: report))
+    func navigateToIssueEditor(
+        issue: InspectionIssue?,
+        area: InspectionArea?,
+        report: InspectionReport,
+        startWithCamera: Bool = false
+    ) {
+        appendToHomePath(
+            Route.issueEditor(
+                issue: issue,
+                area: area,
+                report: report,
+                startWithCamera: startWithCamera
+            )
+        )
     }
 
     /// Navigate to area editor

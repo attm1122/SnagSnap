@@ -128,6 +128,25 @@ final class JourneyCompletionTests: XCTestCase {
         XCTAssertEqual(report.issues?.first?.area?.id, area.id)
     }
 
+    func testCaptureDraftFactoryCreatesReportAndGeneralArea() throws {
+        let context = try makeContext()
+
+        let draft = try CaptureDraftFactory.makeCaptureDraft(context: context)
+
+        XCTAssertEqual(draft.report.title, "Draft Photo Report")
+        XCTAssertEqual(draft.report.propertyName, "Property to identify")
+        XCTAssertEqual(draft.report.propertyAddress, "Address to add")
+        XCTAssertEqual(draft.report.generalNotes, "Started from photo capture. Complete the property details before sharing.")
+        XCTAssertEqual(draft.area.name, "General")
+        XCTAssertEqual(draft.area.report?.id, draft.report.id)
+        XCTAssertEqual(draft.report.areas?.first?.id, draft.area.id)
+
+        let reports = try context.fetch(FetchDescriptor<InspectionReport>())
+        let areas = try context.fetch(FetchDescriptor<InspectionArea>())
+        XCTAssertEqual(reports.count, 1)
+        XCTAssertEqual(areas.count, 1)
+    }
+
     func testInvalidIssueDoesNotCompleteJourney() throws {
         let context = try makeContext()
         let report = InspectionReport(
