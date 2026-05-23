@@ -1,58 +1,53 @@
 import SwiftUI
+import Foundation
 
-/// Central theme configuration for the SnagSnap app.
-/// Provides consistent colors, typography, spacing, and layout values.
+// MARK: - Design Tokens
 enum Theme {
+    // MARK: Colors
+    static let primary = Color.accentColor
+    static let primaryLight = Color.accentColor.opacity(0.15)
+    static let background = Color(.systemBackground)
+    static let secondaryBackground = Color(.secondarySystemBackground)
+    static let groupedBackground = Color(.systemGroupedBackground)
+    static let secondaryGroupedBackground = Color(.secondarySystemGroupedBackground)
+    static let label = Color(.label)
+    static let secondaryLabel = Color(.secondaryLabel)
+    static let tertiaryLabel = Color(.tertiaryLabel)
+    static let separator = Color(.separator)
+    static let error = Color(.systemRed)
+    static let success = Color(.systemGreen)
+    static let warning = Color(.systemOrange)
 
-    // MARK: - Colors
+    // MARK: Status Colors
+    static let statusDraft = Color.gray
+    static let statusInProgress = Color.blue
+    static let statusCompleted = Color.green
+    static let statusArchived = Color.orange
 
-    /// Deep navy primary color for headers, navigation, and key UI elements.
-    static let primary = Color(red: 0.12, green: 0.18, blue: 0.35)
+    // MARK: Severity Colors
+    static let severityLow = Color.gray
+    static let severityMedium = Color.yellow
+    static let severityHigh = Color.orange
+    static let severityCritical = Color.red
 
-    /// Amber/orange accent for CTAs, badges, and urgent items.
-    static let accent = Color(red: 0.95, green: 0.58, blue: 0.13)
+    // MARK: Issue Status Colors
+    static let issueStatusOpen = Color.red
+    static let issueStatusInProgress = Color.blue
+    static let issueStatusResolved = Color.green
 
-    /// Medium blue for secondary interactive elements and links.
-    static let secondaryAccent = Color(red: 0.20, green: 0.40, blue: 0.75)
+    // MARK: Typography
+    static let fontLargeTitle = Font.largeTitle.weight(.bold)
+    static let fontTitle = Font.title.weight(.semibold)
+    static let fontTitle2 = Font.title2.weight(.semibold)
+    static let fontTitle3 = Font.title3.weight(.semibold)
+    static let fontHeadline = Font.headline
+    static let fontSubheadline = Font.subheadline
+    static let fontBody = Font.body
+    static let fontCallout = Font.callout
+    static let fontFootnote = Font.footnote
+    static let fontCaption = Font.caption
 
-    /// Success green for completed states and positive feedback.
-    static let success = Color(red: 0.20, green: 0.78, blue: 0.35)
-
-    /// Warning orange for cautionary states.
-    static let warning = Color(red: 1.0, green: 0.65, blue: 0.15)
-
-    /// Error red for failures and destructive actions.
-    static let error = Color(red: 0.92, green: 0.26, blue: 0.21)
-
-    /// Info blue for informational highlights and tips.
-    static let info = Color(red: 0.18, green: 0.52, blue: 0.96)
-
-    // MARK: - Background Colors
-
-    /// Primary grouped background (adapts to light/dark mode).
-    static let background = Color(.systemGroupedBackground)
-
-    /// Card and sheet background.
-    static let cardBackground = Color(.secondarySystemGroupedBackground)
-
-    /// Elevated tertiary background for nested content.
-    static let tertiaryBackground = Color(.tertiarySystemGroupedBackground)
-
-    // MARK: - Typography
-
-    static let largeTitle = Font.system(.largeTitle, design: .rounded, weight: .bold)
-    static let title = Font.system(.title, design: .rounded, weight: .semibold)
-    static let title2 = Font.system(.title2, design: .rounded, weight: .semibold)
-    static let title3 = Font.system(.title3, design: .rounded, weight: .medium)
-    static let headline = Font.system(.headline, design: .default, weight: .semibold)
-    static let body = Font.system(.body, design: .default, weight: .regular)
-    static let bodyMedium = Font.system(.body, design: .default, weight: .medium)
-    static let callout = Font.system(.callout, design: .default, weight: .medium)
-    static let caption = Font.system(.caption, design: .default, weight: .medium)
-    static let footnote = Font.system(.footnote, design: .default, weight: .regular)
-
-    // MARK: - Spacing
-
+    // MARK: Spacing
     static let spacingXS: CGFloat = 4
     static let spacingS: CGFloat = 8
     static let spacingM: CGFloat = 16
@@ -60,25 +55,51 @@ enum Theme {
     static let spacingXL: CGFloat = 32
     static let spacingXXL: CGFloat = 48
 
-    // MARK: - Corner Radius
+    // MARK: Corner Radius
+    static let radiusSmall: CGFloat = 6
+    static let radiusMedium: CGFloat = 10
+    static let radiusLarge: CGFloat = 16
+    static let radiusXL: CGFloat = 24
 
-    static let cornerRadiusS: CGFloat = 8
-    static let cornerRadiusM: CGFloat = 12
-    static let cornerRadiusL: CGFloat = 16
-    static let cornerRadiusXL: CGFloat = 20
+    // MARK: Shadows
+    static let shadowColor = Color.black.opacity(0.1)
+    static let shadowRadiusSmall: CGFloat = 4
+    static let shadowRadiusMedium: CGFloat = 8
+    static let shadowRadiusLarge: CGFloat = 16
+    static let shadowYOffsetSmall: CGFloat = 2
+    static let shadowYOffsetMedium: CGFloat = 4
 
-    // MARK: - Shadows
-
-    static let shadowColor = Color.black.opacity(0.08)
-    static let shadowRadius: CGFloat = 8
-    static let shadowY: CGFloat = 2
-
-    // MARK: - Layout
-
-    static let maxContentWidth: CGFloat = 680
-    static let buttonHeight: CGFloat = 52
-    static let iconSizeS: CGFloat = 16
-    static let iconSizeM: CGFloat = 20
-    static let iconSizeL: CGFloat = 24
-    static let iconSizeXL: CGFloat = 32
+    // MARK: Icons (SF Symbols)
+    static let iconHome = "house.fill"
+    static let iconSettings = "gearshape.fill"
+    static let iconReports = "doc.text.fill"
+    static let iconAdd = "plus"
+    static let iconCamera = "camera.fill"
+    static let iconPhoto = "photo.fill"
+    static let iconCheckmark = "checkmark.circle.fill"
+    static let iconChevronRight = "chevron.right"
+    static let iconTrash = "trash.fill"
+    static let iconEdit = "pencil"
+    static let iconPDF = "doc.fill"
+    static let iconShare = "square.and.arrow.up"
+    static let iconArea = "square.grid.2x2"
+    static let iconIssue = "exclamationmark.triangle.fill"
+    static let iconBack = "chevron.left"
+    static let iconClose = "xmark"
+    static let iconSearch = "magnifyingglass"
+    static let iconFilter = "line.3.horizontal.decrease"
+    static let iconSort = "arrow.up.arrow.down"
+    static let iconMore = "ellipsis"
+    static let iconStar = "star.fill"
+    static let iconLock = "lock.fill"
+    static let iconUnlock = "lock.open.fill"
+    static let iconPerson = "person.fill"
+    static let iconCalendar = "calendar"
+    static let iconClock = "clock"
+    static let iconLocation = "mappin.and.ellipse"
+    static let iconNote = "note.text"
+    static let iconPin = "pin.fill"
+    static let iconCircle = "circle.fill"
+    static let iconArrowUp = "arrow.up"
+    static let iconArrowDown = "arrow.down"
 }

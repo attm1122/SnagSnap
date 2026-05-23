@@ -1,160 +1,135 @@
 import SwiftUI
 
-// MARK: - PrimaryButtonModifier
+// MARK: - Card Modifier
 
-/// A view modifier that applies the primary (filled navy) button appearance.
-struct PrimaryButtonModifier: ViewModifier {
-    var isFullWidth: Bool = false
-
-    func body(content: Content) -> some View {
-        content
-            .font(Theme.bodyMedium)
-            .foregroundStyle(.white)
-            .frame(maxWidth: isFullWidth ? .infinity : nil)
-            .frame(height: Theme.buttonHeight)
-            .padding(.horizontal, Theme.spacingL)
-            .background(Theme.primary)
-            .clipShape(RoundedRectangle(cornerRadius: Theme.cornerRadiusM, style: .continuous))
-    }
-}
-
-extension View {
-    /// Applies the primary button modifier.
-    /// - Parameter isFullWidth: Whether the button expands to fill available width.
-    func primaryButtonStyle(isFullWidth: Bool = false) -> some View {
-        modifier(PrimaryButtonModifier(isFullWidth: isFullWidth))
-    }
-}
-
-// MARK: - CardModifier
-
-/// A view modifier that wraps content in a themed card with shadow, corner
-/// radius, and optional border.
+/// Applies a card-style appearance with background, corner radius, and shadow.
 struct CardModifier: ViewModifier {
-    var padding: CGFloat = Theme.spacingM
-    var cornerRadius: CGFloat = Theme.cornerRadiusM
-    var background: Color = Theme.cardBackground
-    var borderColor: Color? = nil
-    var shadowRadius: CGFloat = Theme.shadowRadius
-    var shadowY: CGFloat = Theme.shadowY
+    var padding: CGFloat
+    var backgroundColor: Color
+    var cornerRadius: CGFloat
+    var shadowRadius: CGFloat
+
+    init(
+        padding: CGFloat = Theme.spacingM,
+        backgroundColor: Color = Theme.secondaryGroupedBackground,
+        cornerRadius: CGFloat = Theme.radiusMedium,
+        shadowRadius: CGFloat = Theme.shadowRadiusSmall
+    ) {
+        self.padding = padding
+        self.backgroundColor = backgroundColor
+        self.cornerRadius = cornerRadius
+        self.shadowRadius = shadowRadius
+    }
 
     func body(content: Content) -> some View {
         content
             .padding(padding)
-            .background(background)
+            .background(backgroundColor)
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .shadow(
+                color: Theme.shadowColor,
+                radius: shadowRadius,
+                x: 0,
+                y: Theme.shadowYOffsetSmall
+            )
+    }
+}
+
+// MARK: - Primary Button Modifier
+
+/// Filled button style using the app's primary color.
+struct PrimaryButtonModifier: ViewModifier {
+    var maxWidth: CGFloat?
+    var height: CGFloat = 52
+    var cornerRadius: CGFloat = Theme.radiusMedium
+
+    func body(content: Content) -> some View {
+        content
+            .font(Theme.fontHeadline)
+            .foregroundStyle(.white)
+            .frame(maxWidth: maxWidth ?? .infinity)
+            .frame(height: height)
+            .background(Theme.primary)
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+    }
+}
+
+/// View modifier for primary button appearance
+struct PrimaryButtonStyle: ButtonStyle {
+    var maxWidth: CGFloat?
+    var height: CGFloat = 52
+    var cornerRadius: CGFloat = Theme.radiusMedium
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(Theme.fontHeadline)
+            .foregroundStyle(.white)
+            .frame(maxWidth: maxWidth ?? .infinity)
+            .frame(height: height)
+            .background(
+                Theme.primary
+                    .opacity(configuration.isPressed ? 0.8 : 1.0)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+            .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
+    }
+}
+
+// MARK: - Secondary Button Modifier
+
+/// Outlined button style with primary color border.
+struct SecondaryButtonModifier: ViewModifier {
+    var maxWidth: CGFloat?
+    var height: CGFloat = 52
+    var cornerRadius: CGFloat = Theme.radiusMedium
+    var borderWidth: CGFloat = 1.5
+
+    func body(content: Content) -> some View {
+        content
+            .font(Theme.fontHeadline)
+            .foregroundStyle(Theme.primary)
+            .frame(maxWidth: maxWidth ?? .infinity)
+            .frame(height: height)
+            .background(Theme.background)
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .stroke(borderColor ?? Color.clear, lineWidth: borderColor != nil ? 1 : 0)
+                    .stroke(Theme.primary, lineWidth: borderWidth)
             )
-            .shadow(color: Theme.shadowColor, radius: shadowRadius, x: 0, y: shadowY)
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
     }
 }
 
-extension View {
-    /// Applies the card modifier with the specified configuration.
-    func cardModifier(
-        padding: CGFloat = Theme.spacingM,
-        cornerRadius: CGFloat = Theme.cornerRadiusM,
-        background: Color = Theme.cardBackground,
-        borderColor: Color? = nil,
-        shadowRadius: CGFloat = Theme.shadowRadius,
-        shadowY: CGFloat = Theme.shadowY
-    ) -> some View {
-        modifier(CardModifier(
-            padding: padding,
-            cornerRadius: cornerRadius,
-            background: background,
-            borderColor: borderColor,
-            shadowRadius: shadowRadius,
-            shadowY: shadowY
-        ))
+/// ButtonStyle for secondary (outlined) buttons
+struct SecondaryButtonStyle: ButtonStyle {
+    var maxWidth: CGFloat?
+    var height: CGFloat = 52
+    var cornerRadius: CGFloat = Theme.radiusMedium
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(Theme.fontHeadline)
+            .foregroundStyle(Theme.primary)
+            .frame(maxWidth: maxWidth ?? .infinity)
+            .frame(height: height)
+            .background(
+                Theme.background
+                    .opacity(configuration.isPressed ? 0.8 : 1.0)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(Theme.primary.opacity(configuration.isPressed ? 0.6 : 1.0), lineWidth: 1.5)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+            .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
     }
 }
 
-// MARK: - SectionHeaderModifier
+// MARK: - Dismiss Keyboard Modifier
 
-/// A view modifier that styles a view as a section header with top padding
-/// and a bottom separator.
-struct SectionHeaderModifier: ViewModifier {
-    func body(content: Content) -> some View {
-        content
-            .font(Theme.headline)
-            .foregroundStyle(.primary)
-            .padding(.top, Theme.spacingL)
-            .padding(.bottom, Theme.spacingXS)
-    }
-}
-
-extension View {
-    /// Applies the section header text style.
-    func sectionHeaderStyle() -> some View {
-        modifier(SectionHeaderModifier())
-    }
-}
-
-// MARK: - Shake Modifier
-
-/// A view modifier that shakes the view horizontally, useful for indicating
-/// a validation error.
-struct ShakeModifier: ViewModifier {
-    @Binding var trigger: Bool
-    @State private var offset: CGFloat = 0
-
-    var intensity: CGFloat = 10
-    var duration: Double = 0.5
-
-    func body(content: Content) -> some View {
-        content
-            .offset(x: offset)
-            .onChange(of: trigger) { _, shouldShake in
-                guard shouldShake else { return }
-                trigger = false
-
-                withAnimation(.easeInOut(duration: duration * 0.15)) {
-                    offset = -intensity
-                }
-
-                DispatchQueue.main.asyncAfter(deadline: .now() + duration * 0.15) {
-                    withAnimation(.easeInOut(duration: duration * 0.7)) {
-                        let keyframes = [
-                            intensity * 0.8,
-                            -intensity * 0.6,
-                            intensity * 0.4,
-                            -intensity * 0.2,
-                            intensity * 0.1,
-                            0
-                        ]
-                        for (index, value) in keyframes.enumerated() {
-                            DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * duration * 0.12) {
-                                withAnimation(.easeInOut(duration: duration * 0.1)) {
-                                    offset = value
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-    }
-}
-
-extension View {
-    /// Shakes the view horizontally when `trigger` becomes `true`.
-    /// - Parameters:
-    ///   - trigger: A boolean binding that initiates the shake when set to `true`.
-    ///   - intensity: Horizontal displacement in points (default `10`).
-    ///   - duration: Total animation duration in seconds (default `0.5`).
-    func shake(trigger: Binding<Bool>, intensity: CGFloat = 10, duration: Double = 0.5) -> some View {
-        modifier(ShakeModifier(trigger: trigger, intensity: intensity, duration: duration))
-    }
-}
-
-// MARK: - DismissKeyboardOnTap
-
-#if canImport(UIKit)
-/// A view modifier that dismisses the keyboard when the user taps outside
-/// an input field.
-struct DismissKeyboardOnTapModifier: ViewModifier {
+/// Dismisses the keyboard when tapping outside of a text field.
+struct DismissKeyboardModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .onTapGesture {
@@ -168,51 +143,81 @@ struct DismissKeyboardOnTapModifier: ViewModifier {
     }
 }
 
-extension View {
-    /// Dismisses the keyboard when the user taps on this view.
-    func dismissKeyboardOnTap() -> some View {
-        modifier(DismissKeyboardOnTapModifier())
+/// High-performance keyboard dismiss modifier that uses a background gesture
+/// without interfering with other tap gestures.
+struct HighPerformanceKeyboardDismissModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .background(
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        dismissKeyboard()
+                    }
+            )
     }
-}
-#endif
 
-// MARK: - Preview
-
-#Preview("ViewModifiers") {
-    VStack(spacing: Theme.spacingL) {
-        // Primary button modifier
-        Text("Primary Button Modifier")
-            .primaryButtonStyle(isFullWidth: true)
-
-        // Card modifier
-        Text("Card Modifier Content")
-            .font(Theme.body)
-            .cardModifier(borderColor: Theme.accent)
-
-        // Section header modifier
-        Text("Section Header Modifier")
-            .sectionHeaderStyle()
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-        // Shake modifier preview
-        ShakePreview()
-    }
-    .padding(Theme.spacingM)
-    .background(Theme.background)
-}
-
-// MARK: - Shake Preview Helper
-
-private struct ShakePreview: View {
-    @State private var shake = false
-
-    var body: some View {
-        SSButton(
-            "Shake Me",
-            style: .secondary,
-            isFullWidth: true,
-            action: { shake = true }
+    private func dismissKeyboard() {
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil,
+            from: nil,
+            for: nil
         )
-        .shake(trigger: $shake)
+    }
+}
+
+// MARK: - View Extension Helpers
+
+extension View {
+    /// Apply card modifier with default styling
+    func card(
+        padding: CGFloat = Theme.spacingM,
+        backgroundColor: Color = Theme.secondaryGroupedBackground,
+        cornerRadius: CGFloat = Theme.radiusMedium,
+        shadowRadius: CGFloat = Theme.shadowRadiusSmall
+    ) -> some View {
+        modifier(CardModifier(
+            padding: padding,
+            backgroundColor: backgroundColor,
+            cornerRadius: cornerRadius,
+            shadowRadius: shadowRadius
+        ))
+    }
+
+    /// Apply primary button appearance
+    func primaryButton(
+        maxWidth: CGFloat? = .infinity,
+        height: CGFloat = 52,
+        cornerRadius: CGFloat = Theme.radiusMedium
+    ) -> some View {
+        modifier(PrimaryButtonModifier(
+            maxWidth: maxWidth,
+            height: height,
+            cornerRadius: cornerRadius
+        ))
+    }
+
+    /// Apply secondary button appearance
+    func secondaryButton(
+        maxWidth: CGFloat? = .infinity,
+        height: CGFloat = 52,
+        cornerRadius: CGFloat = Theme.radiusMedium
+    ) -> some View {
+        modifier(SecondaryButtonModifier(
+            maxWidth: maxWidth,
+            height: height,
+            cornerRadius: cornerRadius
+        ))
+    }
+
+    /// Dismiss keyboard on tap outside text fields
+    func dismissKeyboardOnTap() -> some View {
+        modifier(DismissKeyboardModifier())
+    }
+
+    /// High-performance keyboard dismiss that doesn't interfere with other gestures
+    func dismissKeyboardOnBackgroundTap() -> some View {
+        modifier(HighPerformanceKeyboardDismissModifier())
     }
 }
