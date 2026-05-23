@@ -56,6 +56,35 @@ enum Theme {
     static let fontFootnote = Font.system(.footnote, design: .default, weight: .regular)
     static let fontCaption = Font.system(.caption, design: .default, weight: .medium)
 
+    // MARK: Typography Convenience Shorthands
+    static let largeTitle = fontLargeTitle
+    static let title = fontTitle
+    static let title2 = fontTitle2
+    static let title3 = fontTitle3
+    static let headline = fontHeadline
+    static let subheadline = fontSubheadline
+    static let body = fontBody
+    static let callout = fontCallout
+    static let footnote = fontFootnote
+    static let caption = fontCaption
+
+    // MARK: Body Medium (medium weight body for buttons)
+    static let bodyMedium = Font.system(.body, design: .default, weight: .medium)
+
+    // MARK: Icon Sizes
+    static let iconSizeM: CGFloat = 16
+    static let iconSizeL: CGFloat = 24
+    static let iconSizeXL: CGFloat = 32
+
+    // MARK: Button Height
+    static let buttonHeight: CGFloat = 50
+
+    // MARK: Corner Radius Convenience Shorthands
+    static let cornerRadiusS: CGFloat = radiusSmall
+    static let cornerRadiusM: CGFloat = radiusMedium
+    static let cornerRadiusL: CGFloat = radiusLarge
+    static let cornerRadiusXL: CGFloat = radiusXL
+
     // MARK: Spacing
     static let spacingXS: CGFloat = 4
     static let spacingS: CGFloat = 8

@@ -3,6 +3,7 @@
 //
 // Centralized haptic feedback service for consistent tactile responses across the app.
 
+import SwiftUI
 import UIKit
 
 // MARK: - Haptic Type
@@ -56,6 +57,42 @@ class HapticService {
         case .selection:
             selection.selectionChanged()
             selection.prepare()
+        }
+    }
+}
+
+// MARK: - SwiftUI Sensory Feedback View Modifier
+
+extension View {
+    /// Applies a native SwiftUI sensory feedback triggered by a value change.
+    @available(iOS 17.0, *)
+    func hapticFeedback<T: Equatable>(_ type: HapticType, trigger: T) -> some View {
+        self.sensoryFeedback(
+            type.sensoryFeedbackType,
+            trigger: trigger
+        ) { _, _ in true }
+    }
+
+    /// Applies a conditional sensory feedback triggered by a value change.
+    @available(iOS 17.0, *)
+    func hapticFeedback<T: Equatable>(_ type: HapticType, trigger: T, condition: @escaping (T, T) -> Bool) -> some View {
+        self.sensoryFeedback(type.sensoryFeedbackType, trigger: trigger) { oldValue, newValue in
+            condition(oldValue, newValue)
+        }
+    }
+}
+
+@available(iOS 17.0, *)
+private extension HapticType {
+    var sensoryFeedbackType: SensoryFeedback {
+        switch self {
+        case .success: return .success
+        case .warning: return .warning
+        case .error: return .error
+        case .selection: return .selection
+        case .light: return .impact(flexibility: .rigid, intensity: 0.3)
+        case .medium: return .impact(flexibility: .solid, intensity: 0.5)
+        case .heavy: return .impact(weight: .heavy, intensity: 0.8)
         }
     }
 }
