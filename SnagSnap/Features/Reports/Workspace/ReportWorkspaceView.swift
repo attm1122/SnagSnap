@@ -40,6 +40,16 @@ struct ReportWorkspaceView: View {
 
     var body: some View {
         VStack(spacing: Theme.spacingM) {
+            WorkspaceGuidanceHeader(
+                report: report,
+                selectedTab: $viewModel.selectedTab,
+                editAction: {
+                    viewModel.showEditSheet = true
+                }
+            )
+            .padding(.horizontal, Theme.spacingL)
+            .padding(.top, Theme.spacingM)
+
             // Segmented tab picker
             Picker("Tab", selection: $viewModel.selectedTab) {
                 ForEach(WorkspaceTab.allCases) { tab in
@@ -51,7 +61,6 @@ struct ReportWorkspaceView: View {
             .padding(5)
             .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusLarge, style: .continuous))
             .padding(.horizontal, Theme.spacingL)
-            .padding(.top, Theme.spacingM)
             .onChange(of: viewModel.selectedTab) { _, _ in
                 HapticService.shared.play(.selection)
             }
@@ -193,6 +202,113 @@ struct ReportWorkspaceView: View {
         report.updatedAt = Date()
         try? modelContext.save()
         return area
+    }
+}
+
+private struct WorkspaceGuidanceHeader: View {
+    let report: InspectionReport
+    @Binding var selectedTab: WorkspaceTab
+    let editAction: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.spacingM) {
+            if report.hasPlaceholderDetails || !report.isReadyForExport {
+                draftBanner
+            }
+
+            progressRail
+        }
+    }
+
+    private var draftBanner: some View {
+        HStack(alignment: .top, spacing: Theme.spacingM) {
+            Image(systemName: report.hasPlaceholderDetails ? "exclamationmark.circle.fill" : "info.circle.fill")
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(report.hasPlaceholderDetails ? Theme.warning : Theme.primary)
+                .frame(width: 32, height: 32)
+
+            VStack(alignment: .leading, spacing: Theme.spacingXS) {
+                Text(report.hasPlaceholderDetails ? "Finish report details before sharing" : "Report still needs a few details")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.ink)
+
+                Text((report.readinessGaps.first ?? "Review the report before export.") + ".")
+                    .font(.caption)
+                    .foregroundStyle(Theme.secondaryLabel)
+                    .lineLimit(2)
+            }
+
+            Spacer()
+
+            Button("Edit") {
+                HapticService.shared.play(.light)
+                editAction()
+            }
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(Theme.primary)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Theme.blueSurface, in: Capsule())
+        }
+        .padding(Theme.spacingM)
+        .background(.white.opacity(0.86), in: RoundedRectangle(cornerRadius: Theme.radiusLarge, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.radiusLarge, style: .continuous)
+                .stroke(report.hasPlaceholderDetails ? Theme.warning.opacity(0.28) : Theme.primary.opacity(0.16), lineWidth: 1)
+        )
+    }
+
+    private var progressRail: some View {
+        HStack(spacing: Theme.spacingS) {
+            ForEach(WorkspaceTab.allCases) { tab in
+                Button {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                        selectedTab = tab
+                    }
+                } label: {
+                    VStack(spacing: 6) {
+                        Image(systemName: stepIcon(for: tab))
+                            .font(.caption.weight(.bold))
+                        Text(stepTitle(for: tab))
+                            .font(.caption2.weight(.semibold))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.78)
+                    }
+                    .foregroundStyle(selectedTab == tab ? .white : Theme.primary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(selectedTab == tab ? Theme.primary : Theme.blueSurface, in: RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(stepAccessibilityLabel(for: tab))
+            }
+        }
+    }
+
+    private func stepIcon(for tab: WorkspaceTab) -> String {
+        switch tab {
+        case .overview:
+            return report.hasPlaceholderDetails ? "1.circle" : "checkmark.circle.fill"
+        case .areas:
+            return report.areaCount > 0 ? "checkmark.circle.fill" : "2.circle"
+        case .issues:
+            return report.issueCount > 0 ? "checkmark.circle.fill" : "3.circle"
+        case .report:
+            return report.isReadyForExport ? "checkmark.circle.fill" : "4.circle"
+        }
+    }
+
+    private func stepTitle(for tab: WorkspaceTab) -> String {
+        switch tab {
+        case .overview: return "Setup"
+        case .areas: return "Areas"
+        case .issues: return "Capture"
+        case .report: return "Export"
+        }
+    }
+
+    private func stepAccessibilityLabel(for tab: WorkspaceTab) -> String {
+        "\(stepTitle(for: tab)) step"
     }
 }
 

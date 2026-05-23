@@ -20,6 +20,7 @@ struct ReportTabView: View {
     @Bindable var viewModel: ReportWorkspaceViewModel
 
     @State private var showRegenerateConfirm = false
+    @State private var showExportPreflight = false
     @State private var showPDFPreview = false
     @State private var previewPDFData: Data?
 
@@ -118,6 +119,19 @@ struct ReportTabView: View {
         } message: {
             Text("A PDF already exists. Re-generating will overwrite it.")
         }
+        .confirmationDialog(
+            "Export anyway?",
+            isPresented: $showExportPreflight,
+            titleVisibility: .visible
+        ) {
+            Button("Export Anyway") {
+                HapticService.shared.play(.medium)
+                viewModel.generatePDF(for: report, modelContext: modelContext)
+            }
+            Button("Review Details", role: .cancel) { }
+        } message: {
+            Text("This report has \(report.readinessGaps.count) item\(report.readinessGaps.count == 1 ? "" : "s") to review before sharing.")
+        }
         .sheet(isPresented: $showPDFPreview) {
             if let data = previewPDFData {
                 PDFPreviewView(report: report, pdfData: data)
@@ -153,6 +167,9 @@ struct ReportTabView: View {
                     pdfStatusSection
                         .animateOnAppear(delay: 0.05, duration: 0.45)
                 }
+
+                exportReadinessSection
+                    .animateOnAppear(delay: 0.08, duration: 0.45)
 
                 // Export settings
                 exportSettingsSection
@@ -289,6 +306,57 @@ struct ReportTabView: View {
         }
     }
 
+    // MARK: - Export Readiness Section
+
+    private var exportReadinessSection: some View {
+        SSCard(padding: Theme.spacingL, cornerRadius: Theme.radiusLarge) {
+            VStack(alignment: .leading, spacing: Theme.spacingM) {
+                HStack(alignment: .top, spacing: Theme.spacingM) {
+                    Image(systemName: report.isReadyForExport ? "checkmark.seal.fill" : "checklist")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(report.isReadyForExport ? Theme.success : Theme.primary)
+                        .frame(width: 46, height: 46)
+                        .background((report.isReadyForExport ? Theme.success : Theme.primary).opacity(0.12), in: Circle())
+
+                    VStack(alignment: .leading, spacing: Theme.spacingXS) {
+                        Text(report.isReadyForExport ? "Ready to export" : "Export preflight")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(Theme.ink)
+
+                        Text(report.isReadyForExport ? "The report has property details, areas, and inspection content." : "Review these items before sending the PDF to a client or tenant.")
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.secondaryLabel)
+                    }
+
+                    Spacer()
+                }
+
+                VStack(alignment: .leading, spacing: Theme.spacingS) {
+                    if report.readinessGaps.isEmpty {
+                        readinessRow("Property details complete", isComplete: true)
+                        readinessRow("Areas added", isComplete: true)
+                        readinessRow("Inspection content added", isComplete: true)
+                    } else {
+                        ForEach(report.readinessGaps, id: \.self) { gap in
+                            readinessRow(gap, isComplete: false)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func readinessRow(_ text: String, isComplete: Bool) -> some View {
+        HStack(spacing: Theme.spacingS) {
+            Image(systemName: isComplete ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
+                .foregroundStyle(isComplete ? Theme.success : Theme.warning)
+            Text(text)
+                .font(.subheadline)
+                .foregroundStyle(Theme.ink)
+            Spacer()
+        }
+    }
+
     // MARK: - Export Settings Section
 
     private var exportSettingsSection: some View {
@@ -387,7 +455,7 @@ struct ReportTabView: View {
                     isFullWidth: true
                 ) {
                     HapticService.shared.play(.medium)
-                    viewModel.generatePDF(for: report, modelContext: modelContext)
+                    generateWithPreflight()
                 }
                 .accessibilityLabel("Generate PDF report")
             }
@@ -406,6 +474,14 @@ struct ReportTabView: View {
                 .foregroundStyle(Theme.secondaryLabel)
         }
         .frame(maxWidth: .infinity)
+    }
+
+    private func generateWithPreflight() {
+        if report.isReadyForExport {
+            viewModel.generatePDF(for: report, modelContext: modelContext)
+        } else {
+            showExportPreflight = true
+        }
     }
 }
 

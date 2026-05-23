@@ -180,6 +180,45 @@ class InspectionReport {
         status == .ready || status == .exported
     }
 
+    /// Whether the report still contains quick-start placeholder identity fields.
+    var hasPlaceholderDetails: Bool {
+        title.trimmingCharacters(in: .whitespacesAndNewlines).localizedCaseInsensitiveContains("draft")
+        || propertyName.trimmingCharacters(in: .whitespacesAndNewlines).localizedCaseInsensitiveContains("new property")
+        || propertyAddress.trimmingCharacters(in: .whitespacesAndNewlines).localizedCaseInsensitiveContains("address to add")
+    }
+
+    /// Human-readable readiness gaps shown before export and in the workspace.
+    var readinessGaps: [String] {
+        var gaps: [String] = []
+
+        if title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || title.localizedCaseInsensitiveContains("draft") {
+            gaps.append("Add a clear report title")
+        }
+
+        if propertyName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || propertyName.localizedCaseInsensitiveContains("new property") {
+            gaps.append("Add the property name")
+        }
+
+        if propertyAddress.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || propertyAddress.localizedCaseInsensitiveContains("address to add") {
+            gaps.append("Add the property address")
+        }
+
+        if areaCount == 0 {
+            gaps.append("Add at least one area")
+        }
+
+        if issueCount == 0 {
+            gaps.append("Add issues or notes from the inspection")
+        }
+
+        return gaps
+    }
+
+    /// Whether the report has enough information to share confidently.
+    var isReadyForExport: Bool {
+        readinessGaps.isEmpty
+    }
+
     /// A user-friendly formatted string of the inspection date (e.g. "23 May 2025").
     var displayDate: String {
         let formatter = DateFormatter()

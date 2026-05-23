@@ -41,6 +41,9 @@ struct OverviewTabView: View {
                     .animateOnAppear(delay: 0.2)
             }
 
+            nextStepSection
+                .animateOnAppear(delay: 0.23)
+
             // Export button
             exportButton
                 .animateOnAppear(delay: 0.25)
@@ -237,20 +240,92 @@ struct OverviewTabView: View {
 
     private var exportButton: some View {
         SSButton(
-            "Export Report",
+            "Review Export",
             style: .primary,
-            icon: "square.and.arrow.up",
+            icon: "doc.text.magnifyingglass",
             isFullWidth: true
         ) {
             withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
                 viewModel.selectedTab = .report
             }
-            DispatchQueue.main.async {
-                viewModel.generatePDF(for: report, modelContext: modelContext)
-            }
         }
         .buttonStyle(.animated(haptic: .medium))
         .padding(.top, Theme.spacingS)
+    }
+
+    private var nextStepSection: some View {
+        SSCard(padding: Theme.spacingL, cornerRadius: Theme.radiusLarge) {
+            VStack(alignment: .leading, spacing: Theme.spacingM) {
+                SSSectionHeader("Next Best Step")
+
+                let next = nextStep
+
+                HStack(alignment: .top, spacing: Theme.spacingM) {
+                    Image(systemName: next.icon)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(Theme.primary)
+                        .frame(width: 44, height: 44)
+                        .background(Theme.blueSurface, in: RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: Theme.spacingXS) {
+                        Text(next.title)
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(Theme.ink)
+                        Text(next.message)
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.secondaryLabel)
+                    }
+
+                    Spacer()
+                }
+
+                SSButton(next.buttonTitle, style: .secondary, icon: next.icon, isFullWidth: true) {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                        viewModel.selectedTab = next.tab
+                    }
+                }
+            }
+        }
+    }
+
+    private var nextStep: (title: String, message: String, buttonTitle: String, icon: String, tab: WorkspaceTab) {
+        if report.hasPlaceholderDetails {
+            return (
+                "Finish setup",
+                "Complete the report title, property name, and address before this is shared.",
+                "Review Setup",
+                "pencil",
+                .overview
+            )
+        }
+
+        if report.areaCount == 0 {
+            return (
+                "Add inspection areas",
+                "Create rooms or zones so captured issues are grouped clearly in the PDF.",
+                "Add Areas",
+                "square.grid.2x2",
+                .areas
+            )
+        }
+
+        if report.issueCount == 0 {
+            return (
+                "Capture the first issue",
+                "Record observations, severity, status, notes, and photos from the inspection.",
+                "Capture Issues",
+                "camera.viewfinder",
+                .issues
+            )
+        }
+
+        return (
+            "Review and export",
+            "Your report has structure and inspection content. Check the PDF options before sharing.",
+            "Review Export",
+            "doc.richtext",
+            .report
+        )
     }
 
     // MARK: - Helper Views

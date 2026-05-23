@@ -367,7 +367,6 @@ final class ReportWorkspaceViewModel {
               let data = FileStorageService.shared.loadPDF(named: path) else {
             return
         }
-        pdfState = .success(data)
         pdfDataToShare = data
         latestPDFURL = FileStorageService.shared.pdfURL(for: path)
     }

@@ -26,6 +26,10 @@ struct IssuesTabView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            captureGuidance
+                .padding(.horizontal, Theme.spacingM)
+                .padding(.bottom, Theme.spacingM)
+
             // Filter & Sort toolbar
             filterSortBar
                 .padding(.horizontal, Theme.spacingM)
@@ -46,6 +50,30 @@ struct IssuesTabView: View {
     }
 
     // MARK: - Filter & Sort Bar
+
+    private var captureGuidance: some View {
+        SSCard(padding: Theme.spacingM, cornerRadius: Theme.radiusLarge) {
+            HStack(alignment: .top, spacing: Theme.spacingM) {
+                Image(systemName: "camera.viewfinder")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Theme.primary)
+                    .frame(width: 46, height: 46)
+                    .background(Theme.blueSurface, in: RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous))
+
+                VStack(alignment: .leading, spacing: Theme.spacingXS) {
+                    Text("Capture issues with photos")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(Theme.ink)
+                    Text(report.areaCount == 0 ? "Add an area first, then record observations, severity, notes, and photos." : "New issues are attached to an area so the report stays organized.")
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.secondaryLabel)
+                        .lineLimit(3)
+                }
+
+                Spacer()
+            }
+        }
+    }
 
     private var filterSortBar: some View {
         HStack(spacing: Theme.spacingS) {

@@ -13,6 +13,7 @@ import SwiftData
 struct AreasTabView: View {
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(AppRouter.self) private var router
 
     let report: InspectionReport
     @Bindable var viewModel: ReportWorkspaceViewModel
@@ -32,6 +33,7 @@ struct AreasTabView: View {
             // Areas list
             if let areas = report.areas, !areas.isEmpty {
                 areasList(areas: areas)
+                afterAreasNextStep(areas: areas)
             } else {
                 emptyState
             }
@@ -125,6 +127,41 @@ struct AreasTabView: View {
         )
         .scaleEntryAnimation(delay: 0.1)
         .padding(.top, Theme.spacingXXL)
+    }
+
+    private func afterAreasNextStep(areas: [InspectionArea]) -> some View {
+        SSCard(padding: Theme.spacingL, cornerRadius: Theme.radiusLarge) {
+            VStack(alignment: .leading, spacing: Theme.spacingM) {
+                HStack(alignment: .top, spacing: Theme.spacingM) {
+                    Image(systemName: "arrow.right.circle.fill")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(Theme.primary)
+                        .frame(width: 42, height: 42)
+                        .background(Theme.blueSurface, in: Circle())
+
+                    VStack(alignment: .leading, spacing: Theme.spacingXS) {
+                        Text("Areas are ready")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(Theme.ink)
+                        Text("Capture issues against an area so the final PDF is easy to scan.")
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.secondaryLabel)
+                    }
+                }
+
+                HStack(spacing: Theme.spacingM) {
+                    SSButton("Add Another", style: .secondary, icon: "plus", isFullWidth: true) {
+                        viewModel.showAddAreaSheet = true
+                    }
+
+                    SSButton("Capture Issue", style: .primary, icon: "camera.viewfinder", isFullWidth: true) {
+                        if let firstArea = areas.first {
+                            router.navigateToIssueEditor(issue: nil, area: firstArea, report: report)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     // MARK: - Actions

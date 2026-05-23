@@ -27,6 +27,8 @@ struct HomeDashboardView: View {
     @State private var isRefreshing = false
     @State private var showHelp = false
     @State private var showAllReports = false
+    @State private var pendingJourney: HomeJourneyIntent?
+    @State private var showReportChooser = false
 
     /// SwiftData query for all inspection reports, sorted by creation date (newest first).
     @Query(sort: \InspectionReport.createdAt, order: .reverse)
@@ -88,6 +90,39 @@ struct HomeDashboardView: View {
         .sheet(isPresented: $showHelp) {
             NavigationStack {
                 HelpCenterView()
+            }
+        }
+        .confirmationDialog(
+            pendingJourney?.dialogTitle ?? "Open report",
+            isPresented: pendingJourneyDialogBinding,
+            titleVisibility: .visible
+        ) {
+            if let latestReport = reports.first {
+                Button("Continue \(latestReport.propertyName)") {
+                    continuePendingJourney(with: latestReport)
+                }
+            }
+
+            Button("Choose Existing Report") {
+                showReportChooser = true
+            }
+
+            Button("Start New Report") {
+                createNewReportForPendingJourney()
+            }
+
+            Button("Cancel", role: .cancel) {
+                pendingJourney = nil
+            }
+        } message: {
+            Text(pendingJourney?.dialogMessage ?? "Choose where this task should happen.")
+        }
+        .sheet(isPresented: $showReportChooser) {
+            NavigationStack {
+                ReportChooserView(reports: reports) { report in
+                    showReportChooser = false
+                    continuePendingJourney(with: report)
+                }
             }
         }
     }
@@ -207,7 +242,7 @@ struct HomeDashboardView: View {
                 title: "Capture",
                 subtitle: "Add inspection photos"
             ) {
-                startWorkspaceJourney(tab: .issues, launchAction: .addIssue)
+                startWorkspaceJourney(.capture)
             }
 
             HomeActionTile(
@@ -215,7 +250,7 @@ struct HomeDashboardView: View {
                 title: "Organize",
                 subtitle: "Areas, issues, notes"
             ) {
-                startWorkspaceJourney(tab: .areas, launchAction: .addArea)
+                startWorkspaceJourney(.organize)
             }
 
             HomeActionTile(
@@ -223,26 +258,28 @@ struct HomeDashboardView: View {
                 title: "Export",
                 subtitle: "Generate polished PDFs"
             ) {
-                startWorkspaceJourney(tab: .report)
+                startWorkspaceJourney(.export)
             }
         }
         .padding(.horizontal, Theme.spacingL)
         .scaleEntryAnimation(delay: 0.1)
     }
 
-    private func startWorkspaceJourney(
-        tab: WorkspaceTab,
-        launchAction: WorkspaceLaunchAction = .none
-    ) {
+    private func startWorkspaceJourney(_ intent: HomeJourneyIntent) {
         HapticService.shared.play(.medium)
 
-        if let latestReport = reports.first {
-            router.navigateToReport(latestReport, initialTab: tab, launchAction: launchAction)
+        if reports.first != nil {
+            pendingJourney = intent
             return
         }
 
         guard EntitlementManager.shared.canCreateNewReport() else {
-            router.navigateToCreateReport(targetTab: tab, launchAction: launchAction)
+            router.navigateToCreateReport(targetTab: intent.tab, launchAction: intent.launchAction)
+            return
+        }
+
+        if intent == .export {
+            router.navigateToCreateReport(targetTab: intent.tab, launchAction: intent.launchAction)
             return
         }
 
@@ -251,18 +288,41 @@ struct HomeDashboardView: View {
             propertyName: "New Property",
             propertyAddress: "Address to add",
             reportType: .general,
-            generalNotes: "Created from the \(tab.rawValue.lowercased()) quick start."
+            generalNotes: "Created from the \(intent.tab.rawValue.lowercased()) quick start. Complete the property details before sharing."
         )
         modelContext.insert(report)
 
         do {
             try modelContext.save()
-            router.navigateToReport(report, initialTab: tab, launchAction: launchAction)
+            router.navigateToReport(report, initialTab: intent.tab, launchAction: intent.launchAction)
         } catch {
             toastMessage = "Could not start report"
             showToast = true
-            router.navigateToCreateReport(targetTab: tab, launchAction: launchAction)
+            router.navigateToCreateReport(targetTab: intent.tab, launchAction: intent.launchAction)
         }
+    }
+
+    private var pendingJourneyDialogBinding: Binding<Bool> {
+        Binding(
+            get: { pendingJourney != nil && !showReportChooser },
+            set: { isPresented in
+                if !isPresented && !showReportChooser {
+                    pendingJourney = nil
+                }
+            }
+        )
+    }
+
+    private func continuePendingJourney(with report: InspectionReport) {
+        guard let intent = pendingJourney else { return }
+        pendingJourney = nil
+        router.navigateToReport(report, initialTab: intent.tab, launchAction: intent.launchAction)
+    }
+
+    private func createNewReportForPendingJourney() {
+        guard let intent = pendingJourney else { return }
+        pendingJourney = nil
+        router.navigateToCreateReport(targetTab: intent.tab, launchAction: intent.launchAction)
     }
 
     // MARK: - Search Bar
@@ -399,6 +459,93 @@ private struct HomeActionTile: View {
             )
         }
         .buttonStyle(.animated(haptic: .light))
+    }
+}
+
+private enum HomeJourneyIntent: Equatable {
+    case capture
+    case organize
+    case export
+
+    var tab: WorkspaceTab {
+        switch self {
+        case .capture: return .issues
+        case .organize: return .areas
+        case .export: return .report
+        }
+    }
+
+    var launchAction: WorkspaceLaunchAction {
+        switch self {
+        case .capture: return .addIssue
+        case .organize: return .addArea
+        case .export: return .none
+        }
+    }
+
+    var dialogTitle: String {
+        switch self {
+        case .capture: return "Capture into which report?"
+        case .organize: return "Organize which report?"
+        case .export: return "Export which report?"
+        }
+    }
+
+    var dialogMessage: String {
+        switch self {
+        case .capture:
+            return "Choose the report that should receive the new issue and photos."
+        case .organize:
+            return "Choose the report where you want to add areas or edit structure."
+        case .export:
+            return "Choose the report to review before generating a PDF."
+        }
+    }
+}
+
+private struct ReportChooserView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    let reports: [InspectionReport]
+    let onSelect: (InspectionReport) -> Void
+
+    var body: some View {
+        List {
+            Section {
+                ForEach(reports) { report in
+                    Button {
+                        onSelect(report)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(report.title)
+                                .font(.headline.weight(.semibold))
+                                .foregroundStyle(Theme.ink)
+                            Text(report.propertyAddress)
+                                .font(.subheadline)
+                                .foregroundStyle(Theme.secondaryLabel)
+                                .lineLimit(2)
+                            Text(report.summaryDescription)
+                                .font(.caption)
+                                .foregroundStyle(Theme.primary)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+            } header: {
+                Text("Choose Report")
+            } footer: {
+                Text("Your next action will happen inside the selected report.")
+            }
+        }
+        .scrollContentBackground(.hidden)
+        .background(Theme.background.ignoresSafeArea())
+        .navigationTitle("Reports")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Cancel") { dismiss() }
+            }
+        }
     }
 }
 
