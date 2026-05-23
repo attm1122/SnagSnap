@@ -51,13 +51,13 @@ struct WelcomeView: View {
 
                 Spacer()
 
-                VStack(spacing: Theme.spacingXL) {
+                VStack(spacing: Theme.spacingL) {
                     SampleReportPreview()
 
                     // Text content
                     VStack(spacing: Theme.spacingM) {
                         Text("Create property reports in minutes")
-                            .font(Theme.fontLargeTitle)
+                            .font(.system(size: 34, weight: .bold))
                             .foregroundStyle(Theme.label)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, Theme.spacingL)
@@ -103,56 +103,56 @@ struct WelcomeView: View {
 
 private struct SampleReportPreview: View {
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
-            VStack(alignment: .leading, spacing: Theme.spacingM) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Inspection Report")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(Theme.primary)
-                            .textCase(.uppercase)
-                        Text("15 Oak Avenue")
-                            .font(.title3.weight(.bold))
-                            .foregroundStyle(Theme.ink)
-                    }
+        VStack(alignment: .leading, spacing: Theme.spacingM) {
+            HStack {
+                Image(systemName: "doc.richtext.fill")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 38, height: 38)
+                    .background(Theme.primary, in: RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous))
 
-                    Spacer()
-
-                    Image(systemName: "doc.richtext.fill")
-                        .font(.title2.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .frame(width: 44, height: 44)
-                        .background(Theme.primary, in: RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Inspection Report")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Theme.primary)
+                        .textCase(.uppercase)
+                    Text("15 Oak Avenue")
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(Theme.ink)
                 }
 
-                HStack(spacing: Theme.spacingS) {
-                    previewStat("4", "Areas")
-                    previewStat("12", "Issues")
-                    previewStat("28", "Photos")
-                }
-
-                VStack(spacing: Theme.spacingS) {
-                    previewIssue("Cracked tile", severity: "High", color: Theme.warning)
-                    previewIssue("Loose handle", severity: "Medium", color: Theme.secondaryAccent)
-                }
+                Spacer()
             }
-            .padding(Theme.spacingL)
-            .frame(width: 288)
-            .background(.white, in: RoundedRectangle(cornerRadius: Theme.radiusLarge, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: Theme.radiusLarge, style: .continuous)
-                    .stroke(.white.opacity(0.9), lineWidth: 1)
-            )
-            .shadow(color: Theme.shadowColor, radius: 24, x: 0, y: 18)
 
-            Image(systemName: "camera.viewfinder")
-                .font(.title2.weight(.semibold))
-                .foregroundStyle(.white)
-                .frame(width: 62, height: 62)
-                .background(Theme.accent, in: Circle())
-                .overlay(Circle().stroke(.white, lineWidth: 3))
-                .offset(x: 14, y: 18)
+            HStack(spacing: Theme.spacingS) {
+                previewStat("4", "Areas")
+                previewStat("12", "Issues")
+                previewStat("28", "Photos")
+            }
+
+            VStack(spacing: Theme.spacingS) {
+                HStack {
+                    Text("Cracked tile")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Theme.ink)
+                    Spacer()
+                    Text("High")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(Theme.warning)
+                }
+                .padding(.horizontal, Theme.spacingS)
+                .padding(.vertical, 7)
+                .background(Theme.background, in: RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous))
+            }
         }
+        .padding(Theme.spacingL)
+        .frame(width: 286)
+        .background(.white, in: RoundedRectangle(cornerRadius: Theme.radiusLarge, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.radiusLarge, style: .continuous)
+                .stroke(Theme.separator.opacity(0.45), lineWidth: 1)
+        )
+        .shadow(color: Theme.shadowColor, radius: 18, x: 0, y: 12)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Sample property report preview with areas, issues, and photos")
     }
@@ -169,24 +169,6 @@ private struct SampleReportPreview: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, Theme.spacingS)
         .background(Theme.blueSurface, in: RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous))
-    }
-
-    private func previewIssue(_ title: String, severity: String, color: Color) -> some View {
-        HStack {
-            Circle()
-                .fill(color)
-                .frame(width: 8, height: 8)
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Theme.ink)
-            Spacer()
-            Text(severity)
-                .font(.caption2.weight(.bold))
-                .foregroundStyle(color)
-        }
-        .padding(.horizontal, Theme.spacingS)
-        .padding(.vertical, 7)
-        .background(Theme.background, in: RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous))
     }
 }
 

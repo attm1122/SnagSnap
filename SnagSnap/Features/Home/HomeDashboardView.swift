@@ -46,7 +46,7 @@ struct HomeDashboardView: View {
             .ignoresSafeArea()
 
             ScrollView {
-                LazyVStack(spacing: reports.isEmpty ? Theme.spacingXL : Theme.spacingL, pinnedViews: []) {
+                LazyVStack(spacing: reports.isEmpty ? Theme.spacingL : Theme.spacingL, pinnedViews: []) {
                     // MARK: Header
                     headerView
 
@@ -63,7 +63,7 @@ struct HomeDashboardView: View {
                     // MARK: Recent Reports Section
                     recentReportsSection
                 }
-                .padding(.top, Theme.spacingXL)
+                .padding(.top, Theme.spacingL)
                 .padding(.bottom, Theme.spacingXXL)
             }
         }
@@ -131,19 +131,19 @@ struct HomeDashboardView: View {
 
     /// The app header with title and subtitle.
     private var headerView: some View {
-        VStack(alignment: .leading, spacing: Theme.spacingXL) {
+        VStack(alignment: .leading, spacing: Theme.spacingL) {
             topBar
 
             VStack(alignment: .leading, spacing: Theme.spacingXS) {
-                Text("SnagSnap")
-                    .font(.system(size: 24, weight: .bold))
+                Text("Property Reports")
+                    .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(Theme.secondaryLabel)
 
                 Text(reports.isEmpty ? "Start a property report." : "What needs attention today?")
-                    .font(.system(size: 48, weight: .bold))
+                    .font(.system(size: 40, weight: .bold))
                     .foregroundStyle(Theme.ink)
-                    .lineSpacing(-2)
-                    .minimumScaleFactor(0.76)
+                    .lineSpacing(0)
+                    .minimumScaleFactor(0.82)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -231,7 +231,7 @@ struct HomeDashboardView: View {
             HomeActionTile(
                 icon: "doc.badge.plus",
                 title: "Create",
-                subtitle: "Start with property details"
+                subtitle: "Property details"
             ) {
                 HapticService.shared.play(.medium)
                 router.navigateToCreateReport()
@@ -240,7 +240,7 @@ struct HomeDashboardView: View {
             HomeActionTile(
                 icon: "camera.viewfinder",
                 title: "Capture",
-                subtitle: "Add inspection photos"
+                subtitle: "Photos and issues"
             ) {
                 startWorkspaceJourney(.capture)
             }
@@ -248,7 +248,7 @@ struct HomeDashboardView: View {
             HomeActionTile(
                 icon: "square.grid.2x2",
                 title: "Organize",
-                subtitle: "Areas, issues, notes"
+                subtitle: "Areas and notes"
             ) {
                 startWorkspaceJourney(.organize)
             }
@@ -256,7 +256,7 @@ struct HomeDashboardView: View {
             HomeActionTile(
                 icon: "doc.richtext",
                 title: "Export",
-                subtitle: "Generate polished PDFs"
+                subtitle: "PDF report"
             ) {
                 startWorkspaceJourney(.export)
             }
@@ -410,10 +410,10 @@ private struct CircleIconButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: systemName)
-                .font(.system(size: 21, weight: .medium))
+                .font(.system(size: 19, weight: .medium))
                 .foregroundStyle(Theme.ink)
-                .frame(width: 58, height: 58)
-                .background(.white.opacity(0.82))
+                .frame(width: 52, height: 52)
+                .background(.white.opacity(0.9))
                 .clipShape(Circle())
                 .overlay(Circle().stroke(.white.opacity(0.9), lineWidth: 1))
         }
@@ -430,15 +430,15 @@ private struct HomeActionTile: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(alignment: .leading, spacing: Theme.spacingL) {
+            VStack(alignment: .leading, spacing: Theme.spacingM) {
                 Image(systemName: icon)
-                    .font(.system(size: 30, weight: .regular))
-                    .foregroundStyle(Theme.primary.opacity(0.42))
-                    .frame(width: 44, height: 44, alignment: .leading)
+                    .font(.system(size: 24, weight: .medium))
+                    .foregroundStyle(Theme.primary.opacity(0.64))
+                    .frame(width: 38, height: 38, alignment: .leading)
 
                 VStack(alignment: .leading, spacing: Theme.spacingXS) {
                     Text(title)
-                        .font(.system(size: 25, weight: .bold))
+                        .font(.system(size: 22, weight: .bold))
                         .foregroundStyle(Theme.ink)
                         .lineLimit(1)
 
@@ -449,13 +449,13 @@ private struct HomeActionTile: View {
                         .multilineTextAlignment(.leading)
                 }
             }
-            .frame(maxWidth: .infinity, minHeight: 154, alignment: .leading)
+            .frame(maxWidth: .infinity, minHeight: 132, alignment: .leading)
             .padding(Theme.spacingM)
             .background(Theme.cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: Theme.radiusLarge, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: Theme.radiusLarge, style: .continuous)
-                    .stroke(.white.opacity(0.75), lineWidth: 1)
+                RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous)
+                    .stroke(Theme.separator.opacity(0.55), lineWidth: 1)
             )
         }
         .buttonStyle(.animated(haptic: .light))

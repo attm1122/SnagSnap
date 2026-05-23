@@ -50,21 +50,6 @@ struct ReportWorkspaceView: View {
             .padding(.horizontal, Theme.spacingL)
             .padding(.top, Theme.spacingM)
 
-            // Segmented tab picker
-            Picker("Tab", selection: $viewModel.selectedTab) {
-                ForEach(WorkspaceTab.allCases) { tab in
-                    Label(tab.rawValue, systemImage: tab.icon)
-                        .tag(tab)
-                }
-            }
-            .pickerStyle(.segmented)
-            .padding(5)
-            .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusLarge, style: .continuous))
-            .padding(.horizontal, Theme.spacingL)
-            .onChange(of: viewModel.selectedTab) { _, _ in
-                HapticService.shared.play(.selection)
-            }
-
             // Tab content
             ScrollView {
                 Group {
@@ -211,7 +196,7 @@ private struct WorkspaceGuidanceHeader: View {
     let editAction: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Theme.spacingM) {
+        VStack(alignment: .leading, spacing: Theme.spacingS) {
             if report.hasPlaceholderDetails || !report.isReadyForExport {
                 draftBanner
             }
@@ -221,14 +206,14 @@ private struct WorkspaceGuidanceHeader: View {
     }
 
     private var draftBanner: some View {
-        HStack(alignment: .top, spacing: Theme.spacingM) {
+        HStack(alignment: .center, spacing: Theme.spacingM) {
             Image(systemName: report.hasPlaceholderDetails ? "exclamationmark.circle.fill" : "info.circle.fill")
-                .font(.title3.weight(.semibold))
+                .font(.headline.weight(.semibold))
                 .foregroundStyle(report.hasPlaceholderDetails ? Theme.warning : Theme.primary)
-                .frame(width: 32, height: 32)
+                .frame(width: 26, height: 26)
 
             VStack(alignment: .leading, spacing: Theme.spacingXS) {
-                Text(report.hasPlaceholderDetails ? "Finish report details before sharing" : "Report still needs a few details")
+                Text(report.hasPlaceholderDetails ? "Finish report details" : "Report needs a few details")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.ink)
 
@@ -251,9 +236,9 @@ private struct WorkspaceGuidanceHeader: View {
             .background(Theme.blueSurface, in: Capsule())
         }
         .padding(Theme.spacingM)
-        .background(.white.opacity(0.86), in: RoundedRectangle(cornerRadius: Theme.radiusLarge, style: .continuous))
+        .background(.white.opacity(0.9), in: RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: Theme.radiusLarge, style: .continuous)
+            RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous)
                 .stroke(report.hasPlaceholderDetails ? Theme.warning.opacity(0.28) : Theme.primary.opacity(0.16), lineWidth: 1)
         )
     }
@@ -266,7 +251,7 @@ private struct WorkspaceGuidanceHeader: View {
                         selectedTab = tab
                     }
                 } label: {
-                    VStack(spacing: 6) {
+                    VStack(spacing: 5) {
                         Image(systemName: stepIcon(for: tab))
                             .font(.caption.weight(.bold))
                         Text(stepTitle(for: tab))
@@ -276,8 +261,12 @@ private struct WorkspaceGuidanceHeader: View {
                     }
                     .foregroundStyle(selectedTab == tab ? .white : Theme.primary)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
-                    .background(selectedTab == tab ? Theme.primary : Theme.blueSurface, in: RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous))
+                    .padding(.vertical, 9)
+                    .background(selectedTab == tab ? Theme.primary : Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous)
+                            .stroke(selectedTab == tab ? Color.clear : Theme.separator.opacity(0.65), lineWidth: 1)
+                    )
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(stepAccessibilityLabel(for: tab))
