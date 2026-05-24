@@ -166,6 +166,7 @@ final class CreateEditIssueViewModel {
 
     /// Cancels the form without saving.
     func cancel() {
+        cleanupPendingPhotosIfNeeded()
         onComplete()
     }
 
@@ -268,6 +269,27 @@ final class CreateEditIssueViewModel {
         }
 
         photoToDelete = nil
+    }
+
+    private func cleanupPendingPhotosIfNeeded() {
+        guard issue == nil, !pendingPhotos.isEmpty else { return }
+
+        for photo in pendingPhotos {
+            try? FileStorageService.shared.deleteImage(at: photo.originalImagePath)
+            try? FileStorageService.shared.deleteImage(at: photo.thumbnailImagePath)
+            if let annotatedPath = photo.annotatedImagePath {
+                try? FileStorageService.shared.deleteImage(at: annotatedPath)
+            }
+            modelContext.delete(photo)
+        }
+
+        pendingPhotos.removeAll()
+
+        do {
+            try modelContext.save()
+        } catch {
+            print("Failed to clean up pending photos: \(error)")
+        }
     }
 }
 
@@ -416,16 +438,18 @@ struct CreateEditIssueView: View {
             .dismissKeyboardOnTap()
             .toast(isPresented: $showToast, message: toastMessage, style: .success, duration: 2.0)
             .onAppear {
-                let ctx = injectedModelContext ?? modelContext
-                viewModel = CreateEditIssueViewModel(
-                    issue: issue,
-                    area: area,
-                    report: report,
-                    modelContext: ctx,
-                    onComplete: { [self] in
-                        self.onComplete?()
-                    }
-                )
+                if viewModel == nil {
+                    let ctx = injectedModelContext ?? modelContext
+                    viewModel = CreateEditIssueViewModel(
+                        issue: issue,
+                        area: area,
+                        report: report,
+                        modelContext: ctx,
+                        onComplete: { [self] in
+                            self.onComplete?()
+                        }
+                    )
+                }
                 startCameraIfNeeded()
             }
         }

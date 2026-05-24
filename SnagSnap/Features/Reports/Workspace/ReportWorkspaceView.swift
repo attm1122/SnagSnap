@@ -177,20 +177,19 @@ struct ReportWorkspaceView: View {
     }
 
     private func firstAreaOrCreateGeneralArea() -> InspectionArea {
-        if let firstArea = report.areas?.first {
-            return firstArea
+        if let area = try? CaptureDraftFactory.generalArea(for: report, context: modelContext) {
+            return area
+        }
+
+        if let fallbackArea = report.areas?.first {
+            return fallbackArea
         }
 
         let area = InspectionArea(name: "General")
         modelContext.insert(area)
         area.report = report
-
-        if report.areas == nil {
-            report.areas = []
-        }
-        report.areas?.append(area)
+        report.areas = [area]
         report.updatedAt = Date()
-        try? modelContext.save()
         return area
     }
 }

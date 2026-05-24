@@ -23,8 +23,8 @@ enum CaptureDraftFactory {
     }
 
     static func generalArea(for report: InspectionReport, context: ModelContext) throws -> InspectionArea {
-        if let existingArea = report.areas?.first {
-            return existingArea
+        if let generalArea = report.areas?.first(where: { $0.name.localizedCaseInsensitiveCompare("General") == .orderedSame }) {
+            return generalArea
         }
 
         let area = InspectionArea(name: "General")

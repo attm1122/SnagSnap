@@ -147,6 +147,29 @@ final class JourneyCompletionTests: XCTestCase {
         XCTAssertEqual(areas.count, 1)
     }
 
+    func testCaptureDraftFactoryUsesExistingGeneralAreaBeforeFirstArea() throws {
+        let context = try makeContext()
+        let report = InspectionReport(
+            title: "Existing Report",
+            propertyName: "Harbour View",
+            propertyAddress: "12 Water Street"
+        )
+        let kitchen = InspectionArea(name: "Kitchen")
+        let general = InspectionArea(name: "General")
+        context.insert(report)
+        context.insert(kitchen)
+        context.insert(general)
+        kitchen.report = report
+        general.report = report
+        report.areas = [kitchen, general]
+        try context.save()
+
+        let selectedArea = try CaptureDraftFactory.generalArea(for: report, context: context)
+
+        XCTAssertEqual(selectedArea.id, general.id)
+        XCTAssertEqual(report.areas?.count, 2)
+    }
+
     func testInvalidIssueDoesNotCompleteJourney() throws {
         let context = try makeContext()
         let report = InspectionReport(
@@ -167,6 +190,43 @@ final class JourneyCompletionTests: XCTestCase {
         XCTAssertFalse(viewModel.save())
         XCTAssertFalse(didComplete)
         XCTAssertTrue(viewModel.showValidationError)
+    }
+
+    func testCancelingNewIssueCleansUpPendingPhotos() throws {
+        let context = try makeContext()
+        let report = InspectionReport(
+            title: "Draft Property Report",
+            propertyName: "New Property",
+            propertyAddress: "Address to add"
+        )
+        let area = InspectionArea(name: "General")
+        let pendingPhoto = IssuePhoto(
+            originalImagePath: "pending-original.jpg",
+            thumbnailImagePath: "pending-thumbnail.jpg",
+            annotatedImagePath: "pending-annotated.jpg"
+        )
+        context.insert(report)
+        context.insert(area)
+        context.insert(pendingPhoto)
+        area.report = report
+        report.areas = [area]
+        try context.save()
+
+        var didComplete = false
+        let viewModel = CreateEditIssueViewModel(
+            area: area,
+            report: report,
+            modelContext: context,
+            onComplete: { didComplete = true }
+        )
+        viewModel.pendingPhotos = [pendingPhoto]
+
+        viewModel.cancel()
+
+        XCTAssertTrue(didComplete)
+        XCTAssertTrue(viewModel.pendingPhotos.isEmpty)
+        let photos = try context.fetch(FetchDescriptor<IssuePhoto>())
+        XCTAssertTrue(photos.isEmpty)
     }
 
     func testDraftReportExposesReadinessGapsBeforeExport() throws {
