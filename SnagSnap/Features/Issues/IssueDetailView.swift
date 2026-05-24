@@ -277,54 +277,40 @@ private struct PhotoThumbnailCard: View {
 
     // MARK: - Thumbnail Content
 
-    @ViewBuilder
     private var thumbnailContent: some View {
-        if let uiImage = FileStorageService.shared.loadThumbnail(from: photo.thumbnailImagePath) {
-            Image(uiImage: uiImage)
-                .resizable()
-                .scaledToFill()
-                .frame(width: 120, height: 120)
-                .clipShape(RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous)
-                        .stroke(Color.gray.opacity(0.2), lineWidth: 0.5)
-                )
-                .overlay(annotationOverlay)
-                .overlay(includeInReportOverlay)
-                .onTapGesture {
+        StoredThumbnailImage(path: photo.thumbnailImagePath)
+            .frame(width: 120, height: 120)
+            .clipShape(RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous)
+                    .stroke(Color.gray.opacity(0.2), lineWidth: 0.5)
+            )
+            .overlay(annotationOverlay)
+            .overlay(includeInReportOverlay)
+            .onTapGesture {
+                onTap()
+            }
+            .contextMenu {
+                Button {
                     onTap()
+                } label: {
+                    Label("View Original", systemImage: "eye")
                 }
-                .contextMenu {
-                    Button {
-                        onTap()
-                    } label: {
-                        Label("View Original", systemImage: "eye")
-                    }
 
-                    if photo.hasAnnotation {
-                        Button {
-                            onTapAnnotated?()
-                        } label: {
-                            Label("View Annotated", systemImage: "pencil.circle")
-                        }
-                    }
-
+                if photo.hasAnnotation {
                     Button {
-                        shareImage()
+                        onTapAnnotated?()
                     } label: {
-                        Label("Share Image", systemImage: "square.and.arrow.up")
+                        Label("View Annotated", systemImage: "pencil.circle")
                     }
                 }
-        } else {
-            RoundedRectangle(cornerRadius: Theme.radiusMedium, style: .continuous)
-                .fill(Color.gray.opacity(0.15))
-                .frame(width: 120, height: 120)
-                .overlay(
-                    Image(systemName: "photo")
-                        .font(.system(size: 32))
-                        .foregroundStyle(.secondary.opacity(0.5))
-                )
-        }
+
+                Button {
+                    shareImage()
+                } label: {
+                    Label("Share Image", systemImage: "square.and.arrow.up")
+                }
+            }
     }
 
     // MARK: - Annotation Overlay

@@ -146,7 +146,9 @@ struct PhotoPickerView: View {
 
             for (index, item) in items.enumerated() {
                 if let data = try? await item.loadTransferable(type: Data.self),
-                   let uiImage = UIImage(data: data) {
+                   let uiImage = await Task.detached(priority: .userInitiated, operation: {
+                       UIImage(data: data)
+                   }).value {
                     images.append(uiImage)
                 }
 

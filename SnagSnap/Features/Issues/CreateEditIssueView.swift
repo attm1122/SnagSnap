@@ -176,7 +176,9 @@ final class CreateEditIssueViewModel {
     func addCapturedPhoto(image: UIImage) {
         Task { @MainActor in
             do {
-                let paths = try FileStorageService.shared.saveImage(image)
+                let paths = try await Task.detached(priority: .userInitiated) {
+                    try FileStorageService.shared.saveImage(image)
+                }.value
                 let newPhoto = IssuePhoto(
                     originalImagePath: paths.originalPath,
                     thumbnailImagePath: paths.thumbnailPath
@@ -207,9 +209,13 @@ final class CreateEditIssueViewModel {
 
             for item in items {
                 if let data = try? await item.loadTransferable(type: Data.self),
-                   let uiImage = UIImage(data: data) {
+                   let uiImage = await Task.detached(priority: .userInitiated, operation: {
+                       UIImage(data: data)
+                   }).value {
                     do {
-                        let paths = try FileStorageService.shared.saveImage(uiImage)
+                        let paths = try await Task.detached(priority: .userInitiated) {
+                            try FileStorageService.shared.saveImage(uiImage)
+                        }.value
                         let newPhoto = IssuePhoto(
                             originalImagePath: paths.originalPath,
                             thumbnailImagePath: paths.thumbnailPath
@@ -905,20 +911,8 @@ private struct PhotoGridCell: View {
 
     // MARK: - Thumbnail
 
-    @ViewBuilder
     private var thumbnailImage: some View {
-        if let uiImage = FileStorageService.shared.loadThumbnail(from: photo.thumbnailImagePath) {
-            Image(uiImage: uiImage)
-                .resizable()
-                .scaledToFill()
-        } else {
-            RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous)
-                .fill(Color.gray.opacity(0.2))
-                .overlay(
-                    Image(systemName: "photo")
-                        .foregroundStyle(.secondary)
-                )
-        }
+        StoredThumbnailImage(path: photo.thumbnailImagePath)
     }
 
     // MARK: - Annotation Badge

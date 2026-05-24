@@ -218,6 +218,38 @@ struct ShimmerView: View {
     }
 }
 
+// MARK: - Stored Thumbnail Image
+
+/// Loads a stored thumbnail off the main actor and renders a stable placeholder while it resolves.
+struct StoredThumbnailImage: View {
+    let path: String
+    var contentMode: ContentMode = .fill
+
+    @State private var image: UIImage?
+
+    var body: some View {
+        Group {
+            if let image {
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: contentMode)
+            } else {
+                RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous)
+                    .fill(Color.gray.opacity(0.2))
+                    .overlay(
+                        Image(systemName: "photo")
+                            .foregroundStyle(.secondary)
+                    )
+            }
+        }
+        .task(id: path) {
+            image = await Task.detached(priority: .utility) {
+                FileStorageService.shared.loadThumbnail(from: path)
+            }.value
+        }
+    }
+}
+
 // MARK: - Tap Feedback
 
 extension View {

@@ -82,6 +82,61 @@ struct PDFExportSettings {
     }
 }
 
+// MARK: - PDF Photo Grid Layout
+
+struct PDFPhotoPlacement {
+    let pageOffset: Int
+    let rect: CGRect
+}
+
+struct PDFPhotoGridLayout {
+    let pageHeight: CGFloat
+    let topY: CGFloat
+    let bottomMargin: CGFloat
+    let contentWidth: CGFloat
+    let horizontalMargin: CGFloat
+    let photoSize: CGFloat
+    let rowSpacing: CGFloat
+    let photosPerRow: Int
+    let continuedTopY: CGFloat
+
+    func placements(forPhotoCount count: Int) -> [PDFPhotoPlacement] {
+        guard count > 0, photosPerRow > 0 else { return [] }
+
+        let columnSpacing = photosPerRow > 1
+            ? (contentWidth - CGFloat(photosPerRow) * photoSize) / CGFloat(photosPerRow - 1)
+            : 0
+        let maximumY = pageHeight - bottomMargin
+        var placements: [PDFPhotoPlacement] = []
+        placements.reserveCapacity(count)
+
+        var pageOffset = 0
+        var rowOnPage = 0
+
+        for index in 0..<count {
+            let column = index % photosPerRow
+            let pageTopY = pageOffset == 0 ? topY : continuedTopY
+            var photoY = pageTopY + CGFloat(rowOnPage) * (photoSize + rowSpacing)
+
+            if photoY + photoSize > maximumY {
+                pageOffset += 1
+                rowOnPage = 0
+                photoY = continuedTopY
+            }
+
+            let photoX = horizontalMargin + CGFloat(column) * (photoSize + columnSpacing)
+            let rect = CGRect(x: photoX, y: photoY, width: photoSize, height: photoSize)
+            placements.append(PDFPhotoPlacement(pageOffset: pageOffset, rect: rect))
+
+            if column == photosPerRow - 1 {
+                rowOnPage += 1
+            }
+        }
+
+        return placements
+    }
+}
+
 // MARK: - PDF Report Service
 
 /// Service for generating professional PDF inspection reports.
@@ -766,26 +821,29 @@ class PDFReportService {
                 )
                 currentY += 22
 
-                // Layout photos in a grid
-                let photoSize: CGFloat = 130
-                let photosPerRow = 3
-                let spacing: CGFloat = (contentWidth - CGFloat(photosPerRow) * photoSize) / CGFloat(photosPerRow - 1)
+                let photoLayout = PDFPhotoGridLayout(
+                    pageHeight: bounds.height,
+                    topY: currentY,
+                    bottomMargin: margin + 30,
+                    contentWidth: contentWidth,
+                    horizontalMargin: margin,
+                    photoSize: 130,
+                    rowSpacing: 10,
+                    photosPerRow: 3,
+                    continuedTopY: margin + 30
+                )
+                let placements = photoLayout.placements(forPhotoCount: photos.count)
+                var currentPhotoPageOffset = 0
 
-                for (photoIndex, photo) in photos.enumerated() {
-                    let row = photoIndex / photosPerRow
-                    let col = photoIndex % photosPerRow
-                    let photoX = margin + CGFloat(col) * (photoSize + spacing)
-                    let photoY = currentY + CGFloat(row) * (photoSize + 10)
-
-                    // Check if we'd exceed page bounds
-                    if photoY + photoSize > bounds.height - margin - 30 {
-                        // Start a new page for remaining photos
+                for (photo, placement) in zip(photos, placements) {
+                    while currentPhotoPageOffset < placement.pageOffset {
                         drawPageNumber(context: context, bounds: bounds, pageNumber: pageNumber)
                         if settings.includeWatermark {
                             drawWatermark(context: context, bounds: bounds)
                         }
 
                         context.beginPage()
+                        currentPhotoPageOffset += 1
                         currentY = margin
 
                         let continuedAttributes: [NSAttributedString.Key: Any] = [
@@ -796,10 +854,9 @@ class PDFReportService {
                             at: CGPoint(x: margin, y: currentY),
                             withAttributes: continuedAttributes
                         )
-                        currentY += 30
                     }
 
-                    let photoRect = CGRect(x: photoX, y: photoY, width: photoSize, height: photoSize)
+                    let photoRect = placement.rect
 
                     // Load and draw the image — originalImagePath is NOT Optional
                     if let image = fileStorage.loadImage(from: photo.originalImagePath) {
@@ -841,9 +898,9 @@ class PDFReportService {
                             .foregroundColor: UIColor.gray
                         ]
                         let captionRect = CGRect(
-                            x: photoX,
-                            y: photoY + photoSize + 2,
-                            width: photoSize,
+                            x: photoRect.minX,
+                            y: photoRect.maxY + 2,
+                            width: photoRect.width,
                             height: 14
                         )
                         (caption as NSString).draw(
@@ -853,8 +910,9 @@ class PDFReportService {
                     }
                 }
 
-                let totalRows = (photos.count + photosPerRow - 1) / photosPerRow
-                currentY += CGFloat(totalRows) * (photoSize + 25)
+                if let lastPlacement = placements.last, lastPlacement.pageOffset == currentPhotoPageOffset {
+                    currentY = lastPlacement.rect.maxY + 25
+                }
             }
         }
 

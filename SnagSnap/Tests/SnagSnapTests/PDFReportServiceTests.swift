@@ -25,6 +25,38 @@ final class PDFReportServiceTests: XCTestCase {
         XCTAssertEqual(document?.pageCount, 1)
     }
 
+    func testPhotoGridLayoutRestartsRowsAfterPageBreak() {
+        let layout = PDFPhotoGridLayout(
+            pageHeight: 842,
+            topY: 650,
+            bottomMargin: 50,
+            contentWidth: 495,
+            horizontalMargin: 50,
+            photoSize: 130,
+            rowSpacing: 10,
+            photosPerRow: 3,
+            continuedTopY: 80
+        )
+
+        let placements = layout.placements(forPhotoCount: 5)
+
+        XCTAssertEqual(placements.map(\.pageOffset), [0, 0, 0, 1, 1])
+        XCTAssertEqual(placements[3].rect.minY, 80)
+        XCTAssertEqual(placements[4].rect.minY, 80)
+        XCTAssertLessThanOrEqual(placements[4].rect.maxY, 842 - 50)
+    }
+
+    func testShareServiceWritesNamedTemporaryPDFFile() throws {
+        let data = Data("%PDF-1.4\n%SnagSnap test\n".utf8)
+
+        let url = try ShareService.shared.temporaryPDFFile(data, reportTitle: "Final Inspection / Unit 4")
+
+        XCTAssertEqual(url.pathExtension, "pdf")
+        XCTAssertTrue(url.lastPathComponent.contains("Final-Inspection-Unit-4"))
+        XCTAssertEqual(try Data(contentsOf: url), data)
+        try? FileManager.default.removeItem(at: url)
+    }
+
     private func makeReport() -> InspectionReport {
         let report = InspectionReport(
             title: "Inspection",

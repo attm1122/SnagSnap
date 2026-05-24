@@ -195,34 +195,20 @@ struct IssueCardView: View {
 
     // MARK: - Thumbnail Image
 
-    @ViewBuilder
     private func thumbnailImage(for photo: IssuePhoto) -> some View {
-        if let uiImage = FileStorageService.shared.loadThumbnail(from: photo.thumbnailImagePath) {
-            Image(uiImage: uiImage)
-                .resizable()
-                .scaledToFill()
-                .frame(width: 56, height: 56)
-                .clipShape(RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous)
-                        .stroke(Color.gray.opacity(0.2), lineWidth: 0.5)
-                )
-                .overlay(
-                    photo.hasAnnotation ? thumbnailAnnotationBadge : nil
-                )
-                .overlay(
-                    !photo.includeInReport ? thumbnailExcludedBadge : nil
-                )
-        } else {
-            RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous)
-                .fill(Theme.blueSurface)
-                .frame(width: 56, height: 56)
-                .overlay(
-                    Image(systemName: "photo")
-                        .font(.system(size: 20))
-                        .foregroundStyle(Theme.secondaryLabel.opacity(0.6))
-                )
-        }
+        StoredThumbnailImage(path: photo.thumbnailImagePath)
+            .frame(width: 56, height: 56)
+            .clipShape(RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous)
+                    .stroke(Color.gray.opacity(0.2), lineWidth: 0.5)
+            )
+            .overlay(
+                photo.hasAnnotation ? thumbnailAnnotationBadge : nil
+            )
+            .overlay(
+                !photo.includeInReport ? thumbnailExcludedBadge : nil
+            )
     }
 
     // MARK: - Thumbnail Annotation Badge

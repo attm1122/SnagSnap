@@ -15,8 +15,6 @@ import SwiftData
 struct MainTabView: View {
 
     @State private var router = AppRouter.shared
-    @State private var homePath: [Route] = []
-    @State private var settingsPath: [Route] = []
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
@@ -25,7 +23,7 @@ struct MainTabView: View {
 
         TabView(selection: $router.selectedTab) {
             // MARK: Home Tab
-            NavigationStack(path: $homePath) {
+            NavigationStack(path: $router.homePath) {
                 HomeDashboardView()
                     .navigationDestination(for: Route.self) { route in
                         homeRouteDestination(for: route)
@@ -37,7 +35,7 @@ struct MainTabView: View {
             .tag(AppRouter.Tab.home)
 
             // MARK: Settings Tab
-            NavigationStack(path: $settingsPath) {
+            NavigationStack(path: $router.settingsPath) {
                 SettingsView(viewModel: SettingsViewModel(modelContext: modelContext))
                     .navigationDestination(for: Route.self) { route in
                         settingsRouteDestination(for: route)
@@ -52,25 +50,6 @@ struct MainTabView: View {
         .environment(router)
         .toolbarBackground(Theme.cardBackground, for: .tabBar)
         .toolbarBackground(.visible, for: .tabBar)
-        .onAppear {
-            syncLocalPathsFromRouter()
-        }
-        .onChange(of: router.homePath) { _, newPath in
-            guard homePath != newPath else { return }
-            homePath = newPath
-        }
-        .onChange(of: router.settingsPath) { _, newPath in
-            guard settingsPath != newPath else { return }
-            settingsPath = newPath
-        }
-        .onChange(of: homePath) { _, newPath in
-            guard router.homePath != newPath else { return }
-            router.homePath = newPath
-        }
-        .onChange(of: settingsPath) { _, newPath in
-            guard router.settingsPath != newPath else { return }
-            router.settingsPath = newPath
-        }
         .onChange(of: router.selectedTab) { _, _ in
             HapticService.shared.play(.selection)
         }
@@ -185,11 +164,6 @@ struct MainTabView: View {
         }
         .padding(Theme.spacingXL)
         .navigationTitle("Error")
-    }
-
-    private func syncLocalPathsFromRouter() {
-        homePath = router.homePath
-        settingsPath = router.settingsPath
     }
 
     private func completeReportCreationWithCapture(_ report: InspectionReport) {

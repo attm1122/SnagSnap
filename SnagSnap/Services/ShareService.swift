@@ -123,10 +123,8 @@ final class ShareService {
     ///   - reportTitle: The title of the report, used as the subject.
     ///   - completion: Closure called when the share sheet is dismissed.
     func sharePDF(_ pdfData: Data, reportTitle: String, completion: (() -> Void)? = nil) {
-        var items: [Any] = [pdfData]
-        if !reportTitle.isEmpty {
-            items.insert(reportTitle, at: 0)
-        }
+        let pdfURL = try? temporaryPDFFile(pdfData, reportTitle: reportTitle)
+        let items: [Any] = pdfURL.map { [$0] } ?? [pdfData]
 
         let activityController = UIActivityViewController(activityItems: items, applicationActivities: nil)
         activityController.setValue(reportTitle, forKey: "subject")
@@ -162,5 +160,29 @@ final class ShareService {
 
             topController.present(activityController, animated: true)
         }
+    }
+
+    func temporaryPDFFile(_ pdfData: Data, reportTitle: String) throws -> URL {
+        let filename = sanitizedPDFName(from: reportTitle)
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SnagSnapShare", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+        let url = directory.appendingPathComponent(filename).appendingPathExtension("pdf")
+        try pdfData.write(to: url, options: .atomic)
+        return url
+    }
+
+    private func sanitizedPDFName(from title: String) -> String {
+        let fallback = "SnagSnap-Report"
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_ "))
+        let scalars = title.unicodeScalars.map { scalar in
+            allowed.contains(scalar) ? Character(scalar) : "-"
+        }
+        let collapsed = String(scalars)
+            .replacingOccurrences(of: " ", with: "-")
+            .replacingOccurrences(of: "--+", with: "-", options: .regularExpression)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "-_ "))
+        return collapsed.isEmpty ? fallback : collapsed
     }
 }
